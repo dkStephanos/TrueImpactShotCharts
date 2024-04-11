@@ -2,7 +2,7 @@ import pandas as pd
 
 class EventProcessor:
     def load_game(game_id):
-        event_df = pd.load_csv('/data/src/events.csv')
+        event_df = pd.read_csv('/data/src/events.csv')
         return event_df.loc[event_df['GameId'] == game_id]
     
     def extract_shots(event_df):
