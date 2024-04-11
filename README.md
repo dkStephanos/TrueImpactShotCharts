@@ -11,6 +11,7 @@ Integration with Play-by-Play Data (Optional): Decide whether to integrate play-
 Feature Generation:
 
 Transition Defense Indicator: Develop a method to assess whether the defense has successfully transitioned based on missed field goals and shot locations.
+    -> This will be the 'zone of death' metric, essentially checking if the 2 lead defenders cross halfcourt before the ball crosses the 3pt line
 Offensive Rebound Percentage: Calculate the offensive rebound percentage by shot location using the geometric model approach.
 
 Constructing the Shot Chart:
