@@ -2,8 +2,8 @@ import pandas as pd
 
 class EventProcessor:
     def load_game(game_id):
-        event_df = pd.read_csv('/data/src/events.csv')
-        return event_df.loc[event_df['GameId'] == game_id]
+        event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str})
+        return event_df.loc[event_df['gameId'] == game_id]
     
     def extract_shots(event_df):
         # Initialize an empty list to hold the indices of offensive rebounds
