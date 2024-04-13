@@ -170,8 +170,8 @@ class AnimationUtil:
         self.ax.add_patch(self.ball_circle)
 
         # First, filter out the player-specific rows for each frame just once
-        moments_df['frame_id'] = moments_df['wcTime'].factorize()[0]
-        player_frames = moments_df.drop(columns=['gameId', 'teamAbbr', 'gameDate'])  # Drop unnecessary columns if they are not needed
+        moments_df.loc[:, 'frame_id'] = moments_df['wcTime'].factorize()[0]
+        player_frames = moments_df.loc[moments_df['teamId'] != -1].drop(columns=['gameId', 'teamAbbr', 'gameDate'])  # Drop unnecessary columns if they are not needed
 
         # Precompute player data for each frame
         player_data_by_frame = player_frames.groupby('frame_id').apply(lambda df: df[['playerId', 'x', 'y', 'z']].to_dict(orient='records'))
@@ -191,6 +191,10 @@ class AnimationUtil:
             }
             for idx, frame in player_frames.groupby('frame_id')
         ]
+        for row in precomputed_data:
+            if len(row["players"]) != 10:
+                print(row)
+                print('fuuuck')
 
         return precomputed_data, annotations, clock_info
 
@@ -213,7 +217,7 @@ class AnimationUtil:
             player_id = player['playerId']  # Assuming each player dictionary has an 'id' key
             if player_id in annotations:
                 self.player_circles[player_id].center = (player['x'], player['y'])
-                annotations[player_id].set_text(f"{self.players_dict[player_id][0]} #{self.players_dict[player_id][1]}")
+                annotations[player_id].set_text(f"{self.players_dict[player_id][1]}")
                 annotations[player_id].set_position((player['x'], player['y']))
                 updated_artists.extend([self.player_circles[player_id], annotations[player_id]])
 
@@ -229,7 +233,7 @@ class AnimationUtil:
             self.fig,
             self.animate,
             fargs=(precomputed_data, annotations, clock_info),
-            frames=len(moments_df),
+            frames=len(precomputed_data),
             interval=interval,
             blit=True,
         )
