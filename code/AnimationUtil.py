@@ -241,19 +241,20 @@ class AnimationUtil:
         )  # To ensure the animation is created
         return HTML(anim.to_html5_video())
 
-    def save_animation(
-        self,
-        event,
-        filename: str = "play.gif",
-        fps: int = 20,
-        writer_option: str = "pillow",
-        bitrate: int = 800,
-    ):
-        """Save the animation for the specified event number. Defaults to pillow writer/gif format"""
+    def save_animation(self, event, filename='animation.mp4'):
+        """Save the animation for the specified event number to a file."""
         anim = self._create_animation(
-            event=event, interval=25
-        )  # To ensure the animation is created
+            event=event, interval=40
+        )  # Create the animation
 
-        Writer = animation.writers[writer_option]
-        writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=bitrate)
-        anim.save(filename, writer=writer)
+        # Check the filename extension to decide on writer
+        if filename.endswith('.gif'):
+            writer = animation.PillowWriter(fps=25)
+        else:
+            # This requires having ffmpeg installed
+            writer = 'ffmpeg'  # Default writer for MP4 and AVI
+        
+        # Save the animation
+        anim.save(filename, writer=writer, dpi=80)  # You can adjust the DPI based on your resolution needs
+
+        print(f"Animation saved as {filename}")
