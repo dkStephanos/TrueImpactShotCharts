@@ -27,47 +27,46 @@ class AnimationUtil:
     Y_CENTER: float = 0.0
 
     TEAM_COLOR_DICT = {
-        1610612737: "#E13A3E",
-        1610612738: "#008348",
-        1610612751: "#061922",
-        1610612766: "#1D1160",
-        1610612741: "#CE1141",
-        1610612739: "#860038",
-        1610612742: "#007DC5",
-        1610612743: "#4D90CD",
-        1610612765: "#006BB6",
-        1610612744: "#FDB927",
-        1610612745: "#CE1141",
-        1610612754: "#00275D",
-        1610612746: "#ED174C",
-        1610612747: "#552582",
-        1610612763: "#0F586C",
-        1610612748: "#98002E",
-        1610612749: "#00471B",
-        1610612750: "#005083",
-        1610612740: "#002B5C",
-        1610612752: "#006BB6",
-        1610612760: "#007DC3",
-        1610612753: "#007DC5",
-        1610612755: "#006BB6",
-        1610612756: "#1D1160",
-        1610612757: "#E03A3E",
-        1610612758: "#724C9F",
-        1610612759: "#BAC3C9",
-        1610612761: "#CE1141",
-        1610612762: "#00471B",
-        1610612764: "#002B5C",
+        1610612737: ("#E13A3E", "Atlanta Hawks"),
+        1610612738: ("#008348", "Boston Celtics"),
+        1610612751: ("#061922", "Brooklyn Nets"),
+        1610612766: ("#1D1160", "Charlotte Hornets"),
+        1610612741: ("#CE1141", "Chicago Bulls"),
+        1610612739: ("#860038", "Cleveland Cavaliers"),
+        1610612742: ("#007DC5", "Dallas Mavericks"),
+        1610612743: ("#4D90CD", "Denver Nuggets"),
+        1610612765: ("#006BB6", "Detroit Pistons"),
+        1610612744: ("#FDB927", "Golden State Warriors"),
+        1610612745: ("#CE1141", "Houston Rockets"),
+        1610612754: ("#00275D", "Indiana Pacers"),
+        1610612746: ("#ED174C", "Los Angeles Clippers"),
+        1610612747: ("#552582", "Los Angeles Lakers"),
+        1610612763: ("#0F586C", "Memphis Grizzlies"),
+        1610612748: ("#98002E", "Miami Heat"),
+        1610612749: ("#00471B", "Milwaukee Bucks"),
+        1610612750: ("#005083", "Minnesota Timberwolves"),
+        1610612740: ("#002B5C", "New Orleans Pelicans"),
+        1610612752: ("#006BB6", "New York Knicks"),
+        1610612760: ("#007DC3", "Oklahoma City Thunder"),
+        1610612753: ("#007DC5", "Orlando Magic"),
+        1610612755: ("#006BB6", "Philadelphia 76ers"),
+        1610612756: ("#1D1160", "Phoenix Suns"),
+        1610612757: ("#E03A3E", "Portland Trail Blazers"),
+        1610612758: ("#724C9F", "Sacramento Kings"),
+        1610612759: ("#BAC3C9", "San Antonio Spurs"),
+        1610612761: ("#CE1141", "Toronto Raptors"),
+        1610612762: ("#00471B", "Utah Jazz"),
+        1610612764: ("#002B5C", "Washington Wizards"),
     }
 
     def __init__(self, tracking_df: pd.DataFrame):
         plt.ioff()
         self.tracking_df: pd.DataFrame = tracking_df
         team_ids = tracking_df["teamId"].head(25).dropna().unique()
-        team_abrv = tracking_df["teamId"].head(25).dropna().unique()
         self.home_team_id = team_ids[0]
         self.away_team_id = team_ids[1]
-        self.home_team_tuple = (team_abrv[0], self.TEAM_COLOR_DICT[team_ids[0]])
-        self.away_team_tuple = (team_abrv[1], self.TEAM_COLOR_DICT[team_ids[1]])
+        self.home_team_tuple = (self.TEAM_COLOR_DICT[team_ids[0]][1], self.TEAM_COLOR_DICT[team_ids[0]][0])
+        self.away_team_tuple = (self.TEAM_COLOR_DICT[team_ids[1]][1], self.TEAM_COLOR_DICT[team_ids[1]][0])
 
         players_df = pd.read_csv("data/src/basic_player_info.csv", dtype={'person_id': str, 'jersey_num': str})
         self.players_dict = {row['person_id']: (f"{row['nickname']} {row['last_name']}", row['jersey_num']) for index, row in players_df.iterrows()}
@@ -156,7 +155,7 @@ class AnimationUtil:
             Circle(
                 (0, 0),  # Initial position; this should be updated dynamically
                 self.PLAYER_CIRCLE_SIZE,
-                color=self.TEAM_COLOR_DICT[self.home_team_id if player_id in home_players_ids else self.away_team_id]  # Team color based on player's team
+                color=self.TEAM_COLOR_DICT[self.home_team_id if player_id in home_players_ids else self.away_team_id][0]  # Team color based on player's team
             )
             for player_id in self.players_dict
         ]
