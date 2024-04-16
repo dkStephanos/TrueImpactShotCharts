@@ -79,6 +79,7 @@ class AnimationUtil:
 
     def setup_animation(self, moments_df):
         """Configure the matplotlib figure and axes for the animation."""
+        
         x_min, x_max, y_min, y_max = self.COURT_DIMS
         self.ax.set_xlim(x_min, x_max)
         self.ax.set_ylim(y_min, y_max)
@@ -100,22 +101,23 @@ class AnimationUtil:
 
         # Collect home and away player_ids (ball has a teamId of -1)
         players_df = moments_df.loc[moments_df['teamId'] != -1, ['playerId', 'playerName', 'teamId']].drop_duplicates()
-        home_players_ids = players_df.loc[players_df["teamId"] == self.home_team_id]["playerId"].unique()
-        guest_players_ids = players_df.loc[players_df["teamId"] == self.away_team_id]["playerId"].unique()
+        home_players_ids = list(players_df.loc[players_df["teamId"] == self.home_team_id]["playerId"].unique())
+        away_players_ids = list(players_df.loc[players_df["teamId"] == self.away_team_id]["playerId"].unique())
+        all_players_ids = home_players_ids + away_players_ids
 
         # Create player cell entries
         home_players = [
             " #".join([self.players_dict[player_id][0], str(self.players_dict[player_id][1])])
             for player_id in home_players_ids
         ]
-        guest_players = [
+        away_players = [
             " #".join([self.players_dict[player_id][0], str(self.players_dict[player_id][1])])
-            for player_id in guest_players_ids
+            for player_id in away_players_ids
         ]
         
         # Render and scale the table
         table = plt.table(
-            cellText=list(zip(home_players, guest_players)),
+            cellText=list(zip(home_players, away_players)),
             colLabels=column_labels,
             colColours=column_colours,
             colWidths=[self.COL_WIDTH, self.COL_WIDTH],
@@ -129,7 +131,7 @@ class AnimationUtil:
         # Set up clock info an annotations
         clock_info = self.ax.annotate(
             "",
-            xy=[self.X_CENTER, self.Y_CENTER],
+            xy=[self.X_CENTER, 24],
             color="black",
             horizontalalignment="center",
             verticalalignment="center",
@@ -145,7 +147,7 @@ class AnimationUtil:
                 verticalalignment="center",
                 fontweight="bold"
             )
-            for player_id in self.players_dict
+            for player_id in all_players_ids
         }
         
         # Set up and add circles for the players and ball
@@ -155,7 +157,7 @@ class AnimationUtil:
                 self.PLAYER_CIRCLE_SIZE,
                 color=self.TEAM_COLOR_DICT[self.home_team_id if player_id in home_players_ids else self.away_team_id][0]  # Team color based on player's team
             )
-            for player_id in self.players_dict
+            for player_id in all_players_ids
         }
         
         self.ball_circle = Circle(
@@ -169,12 +171,23 @@ class AnimationUtil:
             self.ax.add_patch(circle)
         self.ax.add_patch(self.ball_circle)
 
-        # First, filter out the player-specific rows for each frame just once
+        # First, add a frame_id to group on
+        moments_df = moments_df.copy()
         moments_df.loc[:, 'frame_id'] = moments_df['wcTime'].factorize()[0]
-        player_frames = moments_df.loc[moments_df['teamId'] != -1].drop(columns=['gameId', 'teamAbbr', 'gameDate'])  # Drop unnecessary columns if they are not needed
+        
+        
+        # Include ball data and player data without filtering out the ball prematurely
+        player_frames = moments_df.drop(columns=['gameId', 'teamAbbr', 'gameDate'])  # Keep ball data
 
-        # Precompute player data for each frame
-        player_data_by_frame = player_frames.groupby('frame_id').apply(lambda df: df[['playerId', 'x', 'y', 'z']].to_dict(orient='records'))
+        # Precompute player data for each frame, ensure to separate ball data here
+        player_data_by_frame = player_frames[player_frames['teamId'] != -1].groupby('frame_id').apply(
+            lambda df: df[['playerId', 'x', 'y', 'z']].to_dict(orient='records')
+        )
+
+        # Separately handle ball data to ensure it's correctly processed
+        ball_data_by_frame = player_frames[player_frames['teamId'] == -1].groupby('frame_id').apply(
+            lambda df: df[['x', 'y', 'z']].iloc[0].to_dict()
+        )
 
         # Now create the precomputed_data list
         precomputed_data = [
@@ -183,27 +196,19 @@ class AnimationUtil:
                 'game_clock': frame['gcTime'].iloc[0],
                 'shot_clock': frame['scTime'].iloc[0],
                 'ball': {
-                    'x': frame.loc[frame['teamId'] != -1, 'x'].iloc[0],
-                    'y': frame.loc[frame['teamId'] != -1, 'y'].iloc[0],
-                    'radius': frame.loc[frame['teamId'] != -1, 'z'].iloc[0] if 'z' in frame.columns else 0.4
+                    'x': ball_data_by_frame.loc[idx]['x'],
+                    'y': ball_data_by_frame.loc[idx]['y'],
+                    'z': ball_data_by_frame.loc[idx]['z']
                 },
                 'players': player_data_by_frame.loc[idx]
             }
             for idx, frame in player_frames.groupby('frame_id')
         ]
-        for row in precomputed_data:
-            if len(row["players"]) != 10:
-                print(row)
-                print('fuuuck')
 
         return precomputed_data, annotations, clock_info
 
     def animate(self, frame: int, precomputed_data, annotations, clock_info):
         moment = precomputed_data[frame]
-
-        # Update the ball's position and radius
-        self.ball_circle.center = (moment['ball']['x'], moment['ball']['y'])
-        self.ball_circle.radius = moment['ball']['radius']
 
         # Update the game and shot clock display
         clock_info.set_text(
@@ -217,10 +222,13 @@ class AnimationUtil:
             player_id = player['playerId']  # Assuming each player dictionary has an 'id' key
             if player_id in annotations:
                 self.player_circles[player_id].center = (player['x'], player['y'])
-                annotations[player_id].set_text(f"{self.players_dict[player_id][1]}")
                 annotations[player_id].set_position((player['x'], player['y']))
                 updated_artists.extend([self.player_circles[player_id], annotations[player_id]])
 
+        # Update the ball's position and radius
+        self.ball_circle.center = (moment['ball']['x'], moment['ball']['y'])
+        self.ball_circle.radius = moment['ball']['z'] / self.NORMALIZATION_COEF
+        
         return updated_artists
 
     def _create_animation(self, event, interval: int):
@@ -242,7 +250,7 @@ class AnimationUtil:
         """Configure and display the animation for the specified event number. Designed for inline Jupyter cells"""
         anim = self._create_animation(
             event=event, interval=40
-        )  # To ensure the animation is created
+        )
         return HTML(anim.to_html5_video())
 
     def save_animation(self, event, filename='animation.mp4'):
@@ -260,5 +268,3 @@ class AnimationUtil:
         
         # Save the animation
         anim.save(filename, writer=writer, dpi=80)  # You can adjust the DPI based on your resolution needs
-
-        print(f"Animation saved as {filename}")
