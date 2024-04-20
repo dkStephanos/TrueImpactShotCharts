@@ -41,7 +41,7 @@ class EventProcessor:
         # Filter the DataFrame for offensive rebounds -- we exclude team rebounds here
         return event_df.loc[(event_df['eventType'] == 'REB') & (event_df['dReb'] == False) & (event_df['playerId'].notnull())]
     
-    def extract_transition_events(event_df):
+    def extract_transition_opportunities(event_df):
         # Find rows where 'dReb' is not null
         drebs = event_df[(event_df['dReb'].notna()) & (event_df['playerId'].notna())].index.tolist()
         
