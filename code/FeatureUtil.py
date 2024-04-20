@@ -15,3 +15,12 @@ class FeatureUtil:
         moment_df = moment_df.drop(["gameId", "teamAbbr", "period", "wcTime", "gcTime", "scTime", "gameDate"], axis=1)
         
         return moment_df
+
+    def ball_position_at_moment(moment_df, timestamp):
+        # Filter the DataFrame for the specified timestamp and the ball (team_id = -1)
+        ball_df = moment_df[(moment_df["timestamp"] == timestamp) & (moment_df["teamId"] == -1)]
+        
+        # Drop unnecessary columns
+        ball_df = ball_df.drop(["gameId", "teamAbbr", "period", "wcTime", "gcTime", "scTime", "gameDate"], axis=1)
+        
+        return ball_df
