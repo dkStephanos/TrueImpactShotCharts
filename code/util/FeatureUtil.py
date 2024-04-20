@@ -59,6 +59,34 @@ class FeatureUtil:
         # Check if the x position has crossed this line (assuming half-court offense to defense transition)
         return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
     
+    def find_ball_crossing_3pt_line(df, basket_x):
+        """
+        Find the first moment when the ball crosses the far 3-point line.
+
+        Args:
+        df (DataFrame): DataFrame containing the tracking data of the ball, which includes
+                        'x', 'y', 'timestamp', and 'teamId' columns.
+        basket_x (float): The x-coordinate of the basket which the offensive team is attacking.
+
+        Returns:
+        dict: A dictionary containing the timestamp and position ('x' and 'y') of the ball
+            when it first crosses the far 3-point line or None if it never crosses.
+        """
+        # Filter the DataFrame to include only the ball data (assuming ball's teamId is -1)
+        ball_df = df[df['teamId'] == -1]
+
+        # Loop through the ball data to check when it crosses the 3-point line
+        for index, row in ball_df.iterrows():
+            if FeatureUtil.is_past_far_three_point_line(row['x'], row['y'], basket_x):
+                return {
+                    'timestamp': row['timestamp'],
+                    'x': row['x'],
+                    'y': row['y']
+                }
+
+        # Return None if the ball never crosses the 3-point line
+        return None
+    
     def is_in_zone_of_death(x, y, basket_x):
         """
         Determine if a player is in the 'zone of death' which is defined as the area in the backcourt
