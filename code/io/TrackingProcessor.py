@@ -53,3 +53,7 @@ class TrackingProcessor:
         """Extract moments for the specified time frame from the game DataFrame."""
         return tracking_df.loc[(tracking_df["wcTime"] >= start_time) & (tracking_df["wcTime"] <= end_time)]
     
+    def extract_offensive_defensive_players(tracking_df, off_team_id):
+        off_ids = list(tracking_df.loc[tracking_df["teamId"] == off_team_id]["playerId"].unique())
+        def_ids = list(tracking_df.loc[tracking_df["teamId"] != off_team_id]["playerId"].dropna().unique())
+        return off_ids, def_ids
