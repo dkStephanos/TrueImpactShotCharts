@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 class FeatureUtil:
     def is_position_in_paint(x, y):
         """
@@ -55,3 +56,46 @@ class FeatureUtil:
 
         # Check if the x position has crossed this line (assuming half-court offense to defense transition)
         return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
+    
+    def find_closest_defenders(df, off_id, timestamp):
+        """
+        Find the closest defender to each offensive player at a given moment.
+
+        Args:
+        df (DataFrame): DataFrame containing columns 'playerId', 'x', 'y', 'teamId', and 'timestamp'.
+        timestamp (int): The specific moment of the game to analyze.
+
+        Returns:
+        DataFrame: A DataFrame with offensive players and their closest defenders.
+        """
+        # Filter the DataFrame for the given timestamp
+        moment_df = df[df['wcTime'] == timestamp]
+        
+        # Separate offensive and defensive players
+        offense = moment_df[moment_df['teamId'] == off_id]
+        defense = moment_df[(moment_df['teamId'] != off_id) & (moment_df['teamId'].notna())]
+        print(offense)
+        print(defense)
+        # Initialize a list to store the results
+        closest_defenders = []
+
+        # Calculate the closest defender for each offensive player
+        for index, offensive_player in offense.iterrows():
+            # Compute distances to all defenders
+            distances = np.sqrt((offensive_player['x'] - defense['x'])**2 + (offensive_player['y'] - defense['y'])**2)
+            
+            # Get the index of the minimum distance
+            min_index = distances.idxmin()
+            
+            # Find the closest defender
+            closest_defender = defense.loc[min_index]
+            
+            # Append the result
+            closest_defenders.append({
+                'off_player_id': offensive_player['playerId'],
+                'closest_defender_id': closest_defender['playerId'],
+                'distance': distances[min_index]
+            })
+
+        # Convert the list of results into a DataFrame
+        return pd.DataFrame(closest_defenders)
