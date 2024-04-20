@@ -175,17 +175,16 @@ class AnimationUtil:
         moments_df = moments_df.copy()
         moments_df.loc[:, 'frame_id'] = moments_df['wcTime'].factorize()[0]
         
-        
         # Include ball data and player data without filtering out the ball prematurely
         player_frames = moments_df.drop(columns=['gameId', 'teamAbbr', 'gameDate'])  # Keep ball data
 
         # Precompute player data for each frame, ensure to separate ball data here
-        player_data_by_frame = player_frames[player_frames['teamId'] != -1].groupby('frame_id').apply(
+        player_data_by_frame = player_frames[player_frames['teamId'] != "-1"].groupby('frame_id').apply(
             lambda df: df[['playerId', 'x', 'y', 'z']].to_dict(orient='records')
         )
 
         # Separately handle ball data to ensure it's correctly processed
-        ball_data_by_frame = player_frames[player_frames['teamId'] == -1].groupby('frame_id').apply(
+        ball_data_by_frame = player_frames[player_frames['teamId'] == "-1"].groupby('frame_id').apply(
             lambda df: df[['x', 'y', 'z']].iloc[0].to_dict()
         )
 
