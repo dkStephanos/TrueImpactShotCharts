@@ -24,3 +24,34 @@ class FeatureUtil:
         in_horizontal_bounds = -PAINT_WIDTH_HALF <= x <= PAINT_WIDTH_HALF
 
         return in_vertical_bounds and in_horizontal_bounds
+    
+    def is_past_halfcourt(x, basket_x):
+        """
+        Determine if a position is past the half-court relative to a given basket location on the x-axis.
+
+        Args:
+        x (float): The x-coordinate of the position.
+        basket_x (float): The x-coordinate of the basket, either 41.75 or -41.75.
+
+        Returns:
+        bool: True if the position is past the half-court towards the opposing basket, otherwise False.
+        """
+        return (basket_x > 0 and x < 0) or (basket_x < 0 and x > 0)
+    
+    def is_past_far_three_point_line(x, y, basket_x):
+        """
+        Determine if a position is past the far three-point line relative to a given basket location on the x-axis.
+
+        Args:
+        x (float): The x-coordinate of the position.
+        y (float): The y-coordinate of the position.
+        basket_x (float): The x-coordinate of the basket, either 41.75 or -41.75.
+
+        Returns:
+        bool: True if the position is past the far three-point line towards the opposing basket, otherwise False.
+        """
+        # Calculate the far 3-point line from the opposite basket
+        far_three_point_line = -basket_x - (23.75 if abs(basket_x) > 23.75 else abs(basket_x))
+
+        # Check if the x position has crossed this line (assuming half-court offense to defense transition)
+        return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
