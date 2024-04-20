@@ -231,10 +231,10 @@ class AnimationUtil:
         
         return updated_artists
 
-    def _create_animation(self, event, interval: int):
+    def _create_animation(self, possession, interval: int):
         """Support method for display/save methods with caching support."""
         self.fig, self.ax = plt.subplots(figsize=(12, 8))
-        moments_df = TrackingProcessor.extract_possession_moments(self.tracking_df, event)
+        moments_df = TrackingProcessor.extract_possession_moments(self.tracking_df, possession)
         precomputed_data, annotations, clock_info = self.setup_animation(moments_df)
 
         return animation.FuncAnimation(
@@ -246,17 +246,17 @@ class AnimationUtil:
             blit=True,
         )
 
-    def display_animation(self, event):        
-        """Configure and display the animation for the specified event number. Designed for inline Jupyter cells"""
+    def display_animation(self, possession):        
+        """Configure and display the animation for the specified possession number. Designed for inline Jupyter cells"""
         anim = self._create_animation(
-            event=event, interval=40
+            possession=possession, interval=40
         )
         return HTML(anim.to_html5_video())
 
-    def save_animation(self, event, filename='animation.mp4'):
-        """Save the animation for the specified event number to a file."""
+    def save_animation(self, possession, filename='animation.mp4'):
+        """Save the animation for the specified possession number to a file."""
         anim = self._create_animation(
-            event=event, interval=40
+            possession=possession, interval=40
         )  # Create the animation
 
         # Check the filename extension to decide on writer
