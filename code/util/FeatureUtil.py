@@ -59,6 +59,37 @@ class FeatureUtil:
         # Check if the x position has crossed this line (assuming half-court offense to defense transition)
         return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
     
+    def is_in_zone_of_death(x, y, basket_x):
+        """
+        Determine if a player is in the 'zone of death' which is defined as the area in the backcourt
+        between the half-court and the 3-point line extending to the baseline, taking into account the curved and straight portions of the 3-point line.
+
+        Args:
+        x (float): The x-coordinate of the player's position.
+        y (float): The y-coordinate of the player's position.
+        basket_x (float): The x-coordinate of the basket, determines which side is the shooting basket.
+
+        Returns:
+        bool: True if the player is in the 'zone of death', False otherwise.
+        """
+        half_court_x = 0
+        corner_three_distance = 22  # 3-point distance at the corners
+        top_key_three_distance = 23.75  # 3-point distance at the top of the arc
+        three_pt_line_transition_x = 14  # Where the 3-point line starts to straighten
+
+        # Determine if the player is in the backcourt
+        in_backcourt = (x < half_court_x) if basket_x > 0 else (x > half_court_x)
+
+        # Check if the player's y position is within the range that includes the 3-point arc
+        if abs(y) <= three_pt_line_transition_x:  # Within the corners where the line is straight
+            distance_from_basket = np.sqrt((x - basket_x) ** 2 + y ** 2)
+            in_zone_of_death = in_backcourt and distance_from_basket > corner_three_distance
+        else:  # Within the arc
+            distance_from_basket = np.sqrt((x - basket_x) ** 2 + y ** 2)
+            in_zone_of_death = in_backcourt and distance_from_basket > top_key_three_distance
+
+        return in_zone_of_death
+    
     def find_closest_defenders(df, off_id, timestamp, unique_defender=False):
         """
         Find the closest defender to each offensive player at a given moment, optimized to use squared distances for efficiency.
