@@ -9,5 +9,9 @@ class TrackingProcessor:
         return tracking_df.loc[tracking_df['wcTime'] == timestamp]
     
     def extract_possession_moments(tracking_df, possession):
-        """Extract moments for the specified time frame from the game DataFrame."""
+        """Extract moments for the specified time frame (as defined by the incoming possession dict) from the game DataFrame."""
         return tracking_df.loc[(tracking_df["wcTime"] >= possession["wcStart"]) & (tracking_df["wcTime"] <= possession["wcEnd"])]
+    
+    def extract_moment_from_timestamps(tracking_df, start_time, end_time):
+        """Extract moments for the specified time frame from the game DataFrame."""
+        return tracking_df.loc[(tracking_df["wcTime"] >= start_time) & (tracking_df["wcTime"] <= end_time)]
