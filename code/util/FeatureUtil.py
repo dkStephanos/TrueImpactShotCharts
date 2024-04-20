@@ -59,13 +59,15 @@ class FeatureUtil:
         # Check if the x position has crossed this line (assuming half-court offense to defense transition)
         return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
     
-    def find_closest_defenders(df, off_id, timestamp):
+    def find_closest_defenders(df, off_id, timestamp, unique_defender=False):
         """
         Find the closest defender to each offensive player at a given moment, optimized to use squared distances for efficiency.
+        Allows for ensuring that each defender is only assigned to one offensive player.
 
         Args:
         df (DataFrame): DataFrame containing columns 'playerId', 'x', 'y', 'teamId', and 'timestamp'.
         timestamp (int): The specific moment of the game to analyze.
+        unique_defender (bool): If True, ensures each defender is only assigned once.
 
         Returns:
         DataFrame: A DataFrame with offensive players and their closest defenders.
@@ -77,33 +79,33 @@ class FeatureUtil:
         offense = moment_df[moment_df['teamId'] == off_id]
         defense = moment_df[(moment_df['teamId'] != off_id) & (moment_df['teamId'] != "-1")]
 
-        # Initialize a list to store the results
+        # Initialize a list to store the results and a set to track assigned defenders
         closest_defenders = []
-
-        # Get defensive positions as numpy arrays for vectorization
-        defense_positions = defense[['x', 'y']].to_numpy()
-        defense_ids = defense['playerId'].values
+        assigned_defenders = set()
 
         # Calculate the closest defender for each offensive player
         for offensive_player in offense.itertuples():
             # Calculate squared distances from the offensive player to all defenders
-            distances = np.sum((np.array([offensive_player.x, offensive_player.y]) - defense_positions)**2, axis=1)
+            distances = np.sum((np.array([offensive_player.x, offensive_player.y]) - defense[['x', 'y']].to_numpy())**2, axis=1)
             
-            # Get the index of the minimum distance
-            min_index = np.argmin(distances)
-            
-            # Compute the actual minimum distance (sqrt)
-            min_distance = np.sqrt(distances[min_index])
+            # Sort distances and get indices sorted by distance
+            sorted_indices = np.argsort(distances)
 
-            # Find the closest defender
-            closest_defender_id = defense_ids[min_index]
-            
-            # Append the result
-            closest_defenders.append({
-                'off_player_id': offensive_player.playerId,
-                'closest_defender_id': closest_defender_id,
-                'distance': min_distance
-            })
+            for idx in sorted_indices:
+                defender_id = defense.iloc[idx]['playerId']
+                if unique_defender and defender_id in assigned_defenders:
+                    continue  # Skip if this defender is already assigned and unique assignment is required
+                # Compute the actual minimum distance (sqrt) for the closest available defender
+                min_distance = np.sqrt(distances[idx])
+                # Assign defender
+                assigned_defenders.add(defender_id)
+                # Append the result
+                closest_defenders.append({
+                    'off_player_id': offensive_player.playerId,
+                    'closest_defender_id': defender_id,
+                    'distance': min_distance
+                })
+                break  # Exit after assigning the closest available defender
 
         # Convert the list of results into a DataFrame
         return pd.DataFrame(closest_defenders)
