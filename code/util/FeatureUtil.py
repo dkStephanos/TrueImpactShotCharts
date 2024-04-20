@@ -109,7 +109,6 @@ class FeatureUtil:
         # Convert the list of results into a DataFrame
         return pd.DataFrame(closest_defenders)
     
-    @staticmethod
     def travel_dist_all(event_df):
         """
         Calculate the total distance traveled by all players in an event DataFrame.
@@ -123,7 +122,6 @@ class FeatureUtil:
         )
         return player_travel_dist
 
-    @staticmethod
     def average_speed_all(event_df):
         """
         Calculate the average speed of all players in an event DataFrame.
@@ -141,7 +139,6 @@ class FeatureUtil:
         ) * 0.681818  # Conversion factor from feet/second to miles/hour
         return player_speeds
 
-    @staticmethod
     def distance_between_players(player_a, player_b):
         """
         Calculate the Euclidean distance between two players at each moment.
@@ -160,7 +157,6 @@ class FeatureUtil:
             for i in range(player_range)
         ]
 
-    @staticmethod
     def distance_between_players_with_moment(player_a, player_b):
         """
         Calculate the Euclidean distance between two players at each moment, including moment numbers.
@@ -175,32 +171,3 @@ class FeatureUtil:
             (euclidean(player_a.iloc[i][["x", "y"]], player_b.iloc[i][["x", "y"]]), player_a.iloc[i]["wcTime"])
             for i in range(player_range)
         ]
-
-    @staticmethod
-    def get_defender_for_player(moment_df, player_id, defensive_team_ids):
-        """
-        Determine the closest defender to a player.
-        Args:
-            moment_df (pd.DataFrame): DataFrame representing player locations and ball position at moments.
-            player_id (int): ID of the player for whom to find the closest defender.
-            defensive_team_ids (list): List of defensive team IDs.
-        Returns:
-            pd.DataFrame: DataFrame containing the closest defender moments and their distances.
-        """
-        defenders_df = moment_df[moment_df['teamId'].isin(defensive_team_ids)]
-        player_df = moment_df[moment_df['playerId'] == player_id]
-
-        distances = defenders_df.apply(
-            lambda row: euclidean((row['x'], row['y']), (player_df['x'].iloc[0], player_df['y'].iloc[0])),
-            axis=1
-        )
-        
-        min_distance_index = distances.idxmin()
-        closest_defender = defenders_df.loc[min_distance_index]
-
-        return pd.DataFrame({
-            'playerId': [player_id],
-            'closestDefenderId': [closest_defender['playerId']],
-            'distance': [distances[min_distance_index]],
-            'moment': [moment_df['wcTime'].iloc[0]]
-        })
