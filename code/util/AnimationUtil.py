@@ -5,7 +5,7 @@ from IPython.display import HTML
 from matplotlib import animation
 from matplotlib.patches import Circle
 from typing import List, Dict, Tuple
-from .TrackingProcessor import TrackingProcessor
+from code.io.TrackingProcessor import TrackingProcessor
 
 class AnimationUtil:
     INTERVAL: int = 2
