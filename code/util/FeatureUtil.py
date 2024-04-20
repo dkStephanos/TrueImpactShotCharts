@@ -90,6 +90,34 @@ class FeatureUtil:
 
         return in_zone_of_death
     
+    def is_leading_offensive_player(df, off_team_id, basket_x):
+        """
+        Determine if there is a leading offensive player who is closer to the basket than any defenders,
+        indicating a potential fast break opportunity.
+
+        Args:
+        df (pd.DataFrame): DataFrame containing player positions and team IDs.
+        off_team_id (int): The team ID for the offensive team.
+        basket_x (float): The x-coordinate of the basket towards which the offense is heading.
+
+        Returns:
+        bool: True if there is a leading offensive player, False otherwise.
+        """
+        # Filter offensive and defensive players
+        offense = df[df['teamId'] == off_team_id]
+        defense = df[df['teamId'] != off_team_id]
+
+        # Calculate distances to the basket for all players
+        offense['distance_to_basket'] = np.abs(offense['x'] - basket_x)
+        defense['distance_to_basket'] = np.abs(defense['x'] - basket_x)
+
+        # Find the minimum distance to the basket for both teams
+        min_off_distance = offense['distance_to_basket'].min()
+        min_def_distance = defense['distance_to_basket'].min()
+
+        # Determine if any offensive player is closer to the basket than all defenders
+        return min_off_distance < min_def_distance
+    
     def find_closest_defenders(df, off_id, timestamp, unique_defender=False):
         """
         Find the closest defender to each offensive player at a given moment, optimized to use squared distances for efficiency.
