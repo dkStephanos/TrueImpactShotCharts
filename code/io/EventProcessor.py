@@ -1,6 +1,34 @@
 import pandas as pd
 
 class EventProcessor:
+    """
+    csv cols: 
+        gameId,
+        eventType,
+        playerId,
+        playerName,
+        teamId,
+        teamAbbr,
+        period,
+        wcTime,
+        wcTimeEnd,
+        gcTime,
+        scTime,
+        fouledId,
+        fouledName,
+        foulType,
+        made,
+        three,
+        fouled,
+        assisted,
+        receiverId,
+        receiverName,
+        distance,
+        dReb,
+        defenderProximity,
+        defenderId,
+        defenderName
+    """
     def load_game(game_id):
         event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str})
         return event_df.loc[event_df['gameId'] == game_id]

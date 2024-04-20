@@ -1,6 +1,22 @@
 import pandas as pd
 
 class TrackingProcessor:
+    """
+    csv cols: 
+        gameId,
+        playerId,
+        playerName,
+        teamId,
+        teamAbbr,
+        period,
+        wcTime,
+        gcTime,
+        scTime,
+        x,
+        y,
+        z,
+        gameDate
+    """
     def load_game(game_id):
         tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str})
         return tracking_df.loc[tracking_df['gameId'] == game_id]
