@@ -40,3 +40,9 @@ class EventProcessor:
             transition_opportunities.append(event_df.loc[start_index:end_index - 1])
         
         return transition_opportunities
+
+    def get_start_end_time_of_event(event):
+        start_moment = event.iloc[0]
+        end_moment = event.iloc[-1]
+        
+        return start_moment['wcTime'], end_moment['wcTime']
