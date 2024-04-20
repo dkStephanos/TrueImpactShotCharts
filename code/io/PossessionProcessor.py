@@ -18,7 +18,7 @@ class PossessionProcessor:
         basketX
     """
     def load_game(game_id):
-        possessions_df = pd.read_csv('data/src/possessions.csv', dtype={'gameId': str, 'teamId': str})
+        possessions_df = pd.read_csv('data/src/possessions.csv', dtype={'gameId': str, 'teamId': str, 'possId': str})
         return possessions_df.loc[possessions_df['gameId'] == game_id]
     
     def extract_possessions_by_outcome(possessions_df, outcome):

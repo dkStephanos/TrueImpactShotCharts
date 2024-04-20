@@ -18,7 +18,7 @@ class TrackingProcessor:
         gameDate
     """
     def load_game(game_id):
-        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str})
+        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         return tracking_df.loc[tracking_df['gameId'] == game_id]
     
     def player_positions_at_moment(moment_df, timestamp, player_ids="all"):
@@ -52,3 +52,4 @@ class TrackingProcessor:
     def extract_moment_from_timestamps(tracking_df, start_time, end_time):
         """Extract moments for the specified time frame from the game DataFrame."""
         return tracking_df.loc[(tracking_df["wcTime"] >= start_time) & (tracking_df["wcTime"] <= end_time)]
+    
