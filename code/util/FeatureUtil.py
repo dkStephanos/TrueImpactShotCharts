@@ -80,15 +80,14 @@ class FeatureUtil:
         # Initialize a list to store the results
         closest_defenders = []
 
-        # Get positions as numpy arrays for vectorization
-        offense_positions = offense[['x', 'y']].to_numpy()
+        # Get defensive positions as numpy arrays for vectorization
         defense_positions = defense[['x', 'y']].to_numpy()
         defense_ids = defense['playerId'].values
 
         # Calculate the closest defender for each offensive player
         for offensive_player in offense.itertuples():
-            # Calculate squared distances to all defenders
-            distances = np.sum((offense_positions - defense_positions)**2, axis=1)
+            # Calculate squared distances from the offensive player to all defenders
+            distances = np.sum((np.array([offensive_player.x, offensive_player.y]) - defense_positions)**2, axis=1)
             
             # Get the index of the minimum distance
             min_index = np.argmin(distances)
