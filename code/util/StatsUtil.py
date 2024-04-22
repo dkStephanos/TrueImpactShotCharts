@@ -3,6 +3,63 @@ from scipy.spatial.distance import euclidean
 
 
 class StatsUtil:
+    def calculate_true_points(df):
+        """
+        Enhances the DataFrame with shot attempts to include a 'true points produced' column,
+        which considers points from made shots and subsequent free throws correctly associated with fouls on those shots.
+
+        Args:
+        df (pd.DataFrame): DataFrame containing game event data.
+
+        Returns:
+        pd.DataFrame: Updated DataFrame with only shot attempts and an added 'true points produced' column.
+        """
+        # Filter to get only shot attempts
+        shots_df = df[df["eventType"] == "SHOT"].copy()
+
+        # Add a column to store the computed true points
+        shots_df["true_points_produced"] = 0
+
+        # Iterate through the shots DataFrame
+        for index, row in shots_df.iterrows():
+            points = 0
+            if row["made"]:  # Check if the shot was made
+                points += 3 if row["three"] else 2
+            else:
+                # Check for fouls resulting in free throws
+                player_id = row["playerId"]
+
+                # Identify free throws that directly follow the shot within the game events
+                subsequent_events = df[
+                    (df["wcTime"] > row["wcTime"]) & (df["gameId"] == row["gameId"])
+                ]
+                free_throws = subsequent_events[
+                    (subsequent_events["eventType"] == "FT")
+                    & (subsequent_events["fouledId"] == player_id)
+                ]
+
+                # Consider the first set of free throws after the shot until a different type of event occurs
+                for _, ft in free_throws.iterrows():
+                    if ft["made"]:
+                        points += 1
+                    # Stop adding points if we encounter an event that is not a free throw
+                    if subsequent_events.loc[ft.name + 1, "eventType"] != "FT":
+                        break
+
+            # Store the total points produced in the DataFrame
+            shots_df.at[index, "true_points_produced"] = points
+
+        return shots_df[
+            [
+                "gameId",
+                "playerId",
+                "playerName",
+                "teamId",
+                "period",
+                "true_points_produced",
+            ]
+        ]
+
     def travel_dist_all(event_df):
         """
         Calculate the total distance traveled by all players in an event DataFrame.
