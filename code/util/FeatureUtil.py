@@ -97,10 +97,10 @@ class FeatureUtil:
     def is_leading_offensive_player(df, off_team_id, basket_x):
         """
         Determine if there is a leading offensive player who is closer to the basket than any defenders,
-        indicating a potential fast break opportunity.
+        taking into account both distance and momentum indicators such as speed and acceleration.
 
         Args:
-        df (pd.DataFrame): DataFrame containing player positions and team IDs.
+        df (pd.DataFrame): DataFrame containing player positions, team IDs, speed, and acceleration.
         off_team_id (int): The team ID for the offensive team.
         basket_x (float): The x-coordinate of the basket towards which the offense is heading.
 
@@ -111,16 +111,21 @@ class FeatureUtil:
         offense = df[df['teamId'] == off_team_id]
         defense = df[df['teamId'] != off_team_id]
 
-        # Calculate distances to the basket for all players
+        # Calculate raw distances to the basket for all players
         offense['distance_to_basket'] = np.abs(offense['x'] - basket_x)
         defense['distance_to_basket'] = np.abs(defense['x'] - basket_x)
 
-        # Find the minimum distance to the basket for both teams
-        min_off_distance = offense['distance_to_basket'].min()
-        min_def_distance = defense['distance_to_basket'].min()
+        # Incorporate speed and acceleration into the distance measure
+        # Assuming higher speed and positive acceleration reduce the effective distance
+        offense['dynamic_distance'] = offense['distance_to_basket'] - (offense['speed'] + 0.5 * offense['acceleration'])
+        defense['dynamic_distance'] = defense['distance_to_basket'] - (defense['speed'] + 0.5 * defense['acceleration'])
 
-        # Determine if any offensive player is closer to the basket than all defenders
-        return min_off_distance < min_def_distance
+        # Find the minimum dynamic distance to the basket for both teams
+        min_off_dynamic_distance = offense['dynamic_distance'].min()
+        min_def_dynamic_distance = defense['dynamic_distance'].min()
+
+        # Determine if any offensive player is dynamically closer to the basket than all defenders
+        return min_off_dynamic_distance < min_def_dynamic_distance
     
     def find_closest_defenders(df, off_id, timestamp, unique_defender=False):
         """
