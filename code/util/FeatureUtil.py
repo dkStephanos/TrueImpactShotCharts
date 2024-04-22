@@ -41,6 +41,34 @@ class FeatureUtil:
         """
         return (basket_x > 0 and x < 0) or (basket_x < 0 and x > 0)
     
+    def find_ball_crossing_halfcourt(df, basket_x):
+        """
+        Find the first moment when the ball crosses the half-court line.
+
+        Args:
+        df (DataFrame): DataFrame containing the tracking data of the ball, which includes
+                        'x', 'y', 'timestamp', and 'teamId' columns.
+        basket_x (float): The x-coordinate of the basket which the offensive team is attacking.
+
+        Returns:
+        dict: A dictionary containing the timestamp and position ('x' and 'y') of the ball
+            when it first crosses the far half-court line or None if it never crosses.
+        """
+        # Filter the DataFrame to include only the ball data (assuming ball's teamId is -1)
+        ball_df = df[df['teamId'] == -1]
+
+        # Loop through the ball data to check when it crosses the half-court line
+        for index, row in ball_df.iterrows():
+            if FeatureUtil.is_past_halfcourt(row['x'], row['y'], basket_x):
+                return {
+                    'timestamp': row['timestamp'],
+                    'x': row['x'],
+                    'y': row['y']
+                }
+        
+        # Return None if the ball never crosses the half-court  line
+        return None
+    
     def is_past_far_three_point_line(x, y, basket_x):
         """
         Determine if a position is past the far three-point line relative to a given basket location on the x-axis.
@@ -83,7 +111,7 @@ class FeatureUtil:
                     'x': row['x'],
                     'y': row['y']
                 }
-
+        
         # Return None if the ball never crosses the 3-point line
         return None
     
