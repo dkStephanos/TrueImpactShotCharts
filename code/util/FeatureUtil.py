@@ -28,7 +28,7 @@ class FeatureUtil:
 
         return in_vertical_bounds and in_horizontal_bounds
     
-    def is_past_halfcourt(x, basket_x):
+    def is_past_halfcourt(x, y, basket_x):
         """
         Determine if a position is past the half-court relative to a given basket location on the x-axis.
 
@@ -37,10 +37,11 @@ class FeatureUtil:
         basket_x (float): The x-coordinate of the basket, either 41.75 or -41.75.
 
         Returns:
-        bool: True if the position is past the half-court towards the opposing basket, otherwise False.
+        bool: True if the position is past the half-court towards the offensive basket, otherwise False.
         """
-        return (basket_x > 0 and x < 0) or (basket_x < 0 and x > 0)
-    
+        # Adjust the condition to reflect the movement towards the offensive basket
+        return (basket_x > 0 and x > 0) or (basket_x < 0 and x < 0)
+
     def is_past_far_three_point_line(x, y, basket_x):
         """
         Determine if a position is past the far three-point line relative to a given basket location on the x-axis.
@@ -51,14 +52,17 @@ class FeatureUtil:
         basket_x (float): The x-coordinate of the basket, either 41.75 or -41.75.
 
         Returns:
-        bool: True if the position is past the far three-point line towards the opposing basket, otherwise False.
+        bool: True if the position is past the far three-point line towards the offensive basket, otherwise False.
         """
-        # Calculate the far 3-point line from the opposite basket
-        far_three_point_line = -basket_x - (23.75 if abs(basket_x) > 23.75 else abs(basket_x))
+        # Correctly calculate the far 3-point line relative to the offensive basket
+        if basket_x > 0:
+            far_three_point_line = basket_x - 23.75
+        else:
+            far_three_point_line = basket_x + 23.75
 
-        # Check if the x position has crossed this line (assuming half-court offense to defense transition)
-        return (basket_x > 0 and x < far_three_point_line) or (basket_x < 0 and x > far_three_point_line)
-    
+        # Adjust the check to consider the direction towards the offensive basket
+        return (basket_x > 0 and x > far_three_point_line) or (basket_x < 0 and x < far_three_point_line)
+
     def is_in_zone_of_death(x, y, basket_x):
         """
         Determine if a player is in the 'zone of death' which is defined as the area in the backcourt
@@ -184,14 +188,14 @@ class FeatureUtil:
         dict: A dictionary containing the timestamp and position ('x' and 'y') of the ball
             when it first meets the condition or None if it never meets the condition.
         """
-        # Filter the DataFrame to include only the ball data (assuming ball's teamId is -1)
-        ball_df = df[df['teamId'] == -1]
+        # Filter the DataFrame to include only the ball data
+        ball_df = df[df['teamId'] == "-1"]
 
         # Loop through the ball data to check when it meets the condition
         for index, row in ball_df.iterrows():
             if condition_function(row['x'], row['y'], basket_x):
                 return {
-                    'timestamp': row['timestamp'],
+                    'timestamp': row['wcTime'],
                     'x': row['x'],
                     'y': row['y']
                 }
@@ -202,7 +206,7 @@ class FeatureUtil:
     def find_ball_crossing_halfcourt(df, basket_x):
         return FeatureUtil.find_ball_moment(df, FeatureUtil.is_past_halfcourt, basket_x)
         
-    def find_ball_crossing_halfcourt(df, basket_x):
+    def find_ball_crossing_far_three_point_line(df, basket_x):
         return FeatureUtil.find_ball_moment(df, FeatureUtil.is_past_far_three_point_line, basket_x)
     
     def travel_dist_all(event_df):
