@@ -6,18 +6,20 @@ class StatsUtil:
     def calculate_true_points(df):
         """
         Enhances the DataFrame with shot attempts to include a 'true points produced' column,
-        which considers points from made shots and subsequent free throws correctly associated with fouls on those shots.
+        which accounts for points from made shots and subsequent free throws following fouls on those shots,
+        using TOUCH events to determine the end of a free throw sequence.
 
         Args:
         df (pd.DataFrame): DataFrame containing game event data.
 
         Returns:
-        pd.DataFrame: Updated DataFrame with only shot attempts and an added 'true points produced' column.
+        pd.DataFrame: Updated DataFrame with shot attempts and an added 'true points produced' column.
         """
         # Filter to get only shot attempts
         shots_df = df[df["eventType"] == "SHOT"].copy()
 
         # Add a column to store the computed true points
+        shots_df["points_produced"] = 0
         shots_df["true_points_produced"] = 0
 
         # Iterate through the shots DataFrame
@@ -25,29 +27,34 @@ class StatsUtil:
             points = 0
             if row["made"]:  # Check if the shot was made
                 points += 3 if row["three"] else 2
-            else:
-                # Check for fouls resulting in free throws
-                player_id = row["playerId"]
+                
+            shots_df.at[index, "points_produced"] = points
 
-                # Identify free throws that directly follow the shot within the game events
-                subsequent_events = df[
-                    (df["wcTime"] > row["wcTime"]) & (df["gameId"] == row["gameId"])
-                ]
-                free_throws = subsequent_events[
-                    (subsequent_events["eventType"] == "FT")
-                    & (subsequent_events["fouledId"] == player_id)
-                ]
+            # Find the immediate next event in the DataFrame
+            if index + 1 < len(df):
+                next_event = df.iloc[index + 1]
+                # Check if the next event is a FOUL related to this SHOT
+                if next_event["eventType"] == "FOUL" and next_event["fouledId"] == row["playerId"]:
+                    # Find free throws directly related to this foul
+                    free_throws = df[
+                        (df["eventType"] == "FT") &
+                        (df["wcTime"] > next_event["wcTime"]) &
+                        (df["playerId"] == row["playerId"]) &
+                        (df["gameId"] == row["gameId"])
+                    ].sort_values(by="wcTime")
 
-                # Consider the first set of free throws after the shot until a different type of event occurs
-                for _, ft in free_throws.iterrows():
-                    if ft["made"]:
-                        points += 1
-                    # Stop adding points if we encounter an event that is not a free throw
-                    if subsequent_events.loc[ft.name + 1, "eventType"] != "FT":
-                        break
+                    for ft in free_throws.itertuples():
+                        if ft.made:
+                            points += 1
+                        # Look for the next event after this free throw
+                        ft_index = df.index.get_loc(ft.Index)
+                        if ft_index + 1 < len(df):
+                            next_ft_event = df.iloc[ft_index + 1]
+                            if next_ft_event["eventType"] != "FT":
+                                break
 
-            # Store the total points produced in the DataFrame
-            shots_df.at[index, "true_points_produced"] = points
+                # Store the total points produced in the DataFrame
+                shots_df.at[index, "true_points_produced"] = points
 
         return shots_df[
             [
@@ -56,6 +63,8 @@ class StatsUtil:
                 "playerName",
                 "teamId",
                 "period",
+                "wcTime",
+                "points_produced",
                 "true_points_produced",
             ]
         ]
