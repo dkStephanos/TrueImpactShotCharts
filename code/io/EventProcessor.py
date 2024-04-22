@@ -30,7 +30,7 @@ class EventProcessor:
         defenderName
     """
     def load_game(game_id):
-        event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str})
+        event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str,})
         return event_df.loc[event_df['gameId'] == game_id]
     
     def extract_shots(event_df):
