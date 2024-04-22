@@ -19,7 +19,7 @@ class TrackingProcessor:
     """
     def load_game(game_id):
         tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
-        return tracking_df.loc[tracking_df['gameId'] == game_id]
+        return tracking_df.loc[tracking_df['gameId'] == game_id].reset_index(drop=True)
     
     def player_positions_at_moment(moment_df, timestamp, player_ids="all"):
         # Handle the player_ids input
@@ -34,7 +34,7 @@ class TrackingProcessor:
         # Drop unnecessary columns
         moment_df = moment_df.drop(["gameId", "teamAbbr", "period", "wcTime", "gcTime", "scTime", "gameDate"], axis=1)
         
-        return moment_df
+        return moment_df.reset_index(drop=True)
 
     def ball_position_at_moment(moment_df, timestamp):
         # Filter the DataFrame for the specified timestamp and the ball (team_id = -1)
@@ -43,17 +43,18 @@ class TrackingProcessor:
         # Drop unnecessary columns
         ball_df = ball_df.drop(["gameId", "teamAbbr", "period", "wcTime", "gcTime", "scTime", "gameDate"], axis=1)
         
-        return ball_df
+        return ball_df.reset_index(drop=True)
     
     def extract_possession_moments(tracking_df, possession):
         """Extract moments for the specified time frame (as defined by the incoming possession dict) from the game DataFrame."""
-        return tracking_df.loc[(tracking_df["wcTime"] >= possession["wcStart"]) & (tracking_df["wcTime"] <= possession["wcEnd"])]
+        return tracking_df.loc[(tracking_df["wcTime"] >= possession["wcStart"]) & (tracking_df["wcTime"] <= possession["wcEnd"])].reset_index(drop=True)
     
     def extract_moment_from_timestamps(tracking_df, start_time, end_time):
         """Extract moments for the specified time frame from the game DataFrame."""
-        return tracking_df.loc[(tracking_df["wcTime"] >= start_time) & (tracking_df["wcTime"] <= end_time)]
+        return tracking_df.loc[(tracking_df["wcTime"] >= start_time) & (tracking_df["wcTime"] <= end_time)].reset_index(drop=True)
     
     def extract_offensive_defensive_players(tracking_df, off_team_id):
         off_ids = list(tracking_df.loc[tracking_df["teamId"] == off_team_id]["playerId"].unique())
         def_ids = list(tracking_df.loc[tracking_df["teamId"] != off_team_id]["playerId"].dropna().unique())
+        
         return off_ids, def_ids
