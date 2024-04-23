@@ -270,4 +270,42 @@ class AnimationUtil:
         # Save the animation
         anim.save(filename, writer=writer, dpi=80)  # You can adjust the DPI based on your resolution needs
 
-    
+    def plot_frame_at_timestamp(self, timestamp):
+        """Plot a single frame based on the given timestamp."""
+        self.fig, self.ax = plt.subplots(figsize=(12, 8))
+        
+        # Filter the dataframe for the specific timestamp
+        moments_df = self.tracking_df[self.tracking_df['wcTime'] == timestamp]
+
+        if moments_df.empty:
+            raise ValueError("No data available for the specified timestamp")
+
+        # Setup the court and game elements
+        annotations, clock_info = self.setup_animation(moments_df)
+
+        # Since we only need one frame, we can directly take the necessary data
+        moment = moments_df.iloc[0]
+        game_clock = moment['gcTime']
+        shot_clock = moment['scTime']
+        quarter = moment['period']
+
+        # Update the annotations and player positions
+        for index, row in moments_df.iterrows():
+            player_id = row['playerId']
+            if player_id in self.player_circles:
+                self.player_circles[player_id].center = (row['x'], row['y'])
+                annotations[player_id].set_position((row['x'], row['y']))
+
+        # Update the ball's position
+        ball_data = moments_df[moments_df['teamId'] == "-1"].iloc[0]
+        self.ball_circle.center = (ball_data['x'], ball_data['y'])
+        self.ball_circle.radius = ball_data['z'] / self.NORMALIZATION_COEF
+
+        # Update the clock info
+        clock_info.set_text(
+            f"Quarter {quarter}\n{int(game_clock) // 60:02d}:{int(game_clock) % 60:02d}\n{shot_clock:.1f}"
+        )
+
+        # Redraw the frame with the updated positions and information
+        self.ax.figure.canvas.draw()
+        plt.show()
