@@ -205,7 +205,7 @@ class VisUtil:
         self.ball_circle = Circle(
             (0, 0),  # Initial ball position
             self.PLAYER_CIRCLE_SIZE,
-            color="#ff8c00",  # Hardcoded orange for the ball
+            color="#E2561A",  # Hardcoded orange for the ball
         )
 
         # Add all player circles and the ball circle to the axes
@@ -404,18 +404,19 @@ class VisUtil:
             line_alpha=0.6,
         )
 
-        # Color each Voronoi region based on the player's team color
-        for region, index in zip(vor.regions, vor.point_region):
-            vertices = vor.vertices[region]
-            if all(v >= 0 for v in region):  # Check if the region is bounded
-                team_id = player_data[index][2]
-                team_color = self.TEAM_COLOR_DICT.get(team_id)[
-                    0
-                ]  # Default to gray if team color not found
-                polygon = plt.Polygon(
-                    vertices, color=team_color, alpha=0.3
-                )  # Set alpha for some transparency
+        # Iterate through each point's region
+        for point_index, region_index in enumerate(vor.point_region):
+            region = vor.regions[region_index]
+            if all(v >= 0 for v in region):  # Check if all vertices are within bounds (not open to infinity)
+                vertices = vor.vertices[region]
+                team_id = player_data[point_index][2]  # Safe as point_index corresponds to player_data directly
+                team_color = self.TEAM_COLOR_DICT.get(team_id, ['#808080'])[0]
+                polygon = plt.Polygon(vertices, color=team_color, alpha=0.3)
                 self.ax.add_patch(polygon)
+            else:
+                # Optionally handle or log infinite regions if needed
+                print(f"Infinite region detected at index {region_index}, skipped from plotting.")
+
 
         # Overlay player circles and annotations on top of the Voronoi diagram for clarity
         for index, row in moments_df.iterrows():
