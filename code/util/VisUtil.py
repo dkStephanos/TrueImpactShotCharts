@@ -7,7 +7,7 @@ from matplotlib.patches import Circle
 from typing import List, Dict, Tuple
 from code.io.TrackingProcessor import TrackingProcessor
 
-class AnimationUtil:
+class VisUtil:
     INTERVAL: int = 2
     COURT_DIMS: Tuple[int, int, int, int] = (
         -47,
