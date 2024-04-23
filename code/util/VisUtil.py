@@ -6,6 +6,7 @@ from matplotlib import animation
 from matplotlib.patches import Circle
 from typing import List, Dict, Tuple
 from code.io.TrackingProcessor import TrackingProcessor
+from scipy.spatial import Voronoi, voronoi_plot_2d
 
 class VisUtil:
     INTERVAL: int = 2
@@ -77,7 +78,7 @@ class VisUtil:
         )  # To store the reference to the last animation, outer dict key is interval, inner is event_num
         self.court = plt.imread("data/img/fullcourt.png")
 
-    def setup_animation(self, moments_df):
+    def setup_court(self, moments_df):
         """Configure the matplotlib figure and axes for the animation."""
         
         x_min, x_max, y_min, y_max = self.COURT_DIMS
@@ -235,7 +236,7 @@ class VisUtil:
         """Support method for display/save methods with caching support."""
         self.fig, self.ax = plt.subplots(figsize=(12, 8))
         moments_df = TrackingProcessor.extract_possession_moments(self.tracking_df, possession)
-        annotations, clock_info = self.setup_animation(moments_df)
+        annotations, clock_info = self.setup_court(moments_df)
         precomputed_data = self.precompute_frames(moments_df)
 
         return animation.FuncAnimation(
@@ -281,7 +282,7 @@ class VisUtil:
             raise ValueError("No data available for the specified timestamp")
 
         # Setup the court and game elements
-        annotations, clock_info = self.setup_animation(moments_df)
+        annotations, clock_info = self.setup_court(moments_df)
 
         # Since we only need one frame, we can directly take the necessary data
         moment = moments_df.iloc[0]
@@ -307,5 +308,47 @@ class VisUtil:
         )
 
         # Redraw the frame with the updated positions and information
+        self.ax.figure.canvas.draw()
+        plt.show()
+        
+    def plot_voronoi_at_timestamp(self, timestamp):
+        """Plot the Voronoi diagram for the players' positions at a specific timestamp."""
+        self.fig, self.ax = plt.subplots(figsize=(12, 8))
+        moments_df = self.tracking_df[self.tracking_df['wcTime'] == timestamp]
+        
+        if moments_df.empty:
+            raise ValueError("No data available for the specified timestamp")
+        
+        annotations, clock_info = self.setup_court(moments_df)  # Set up the court and game elements
+        
+        # Extract player positions and filter out the ball
+        player_positions = moments_df[moments_df['teamId'] != "-1"][['x', 'y']].values
+
+        # Compute the Voronoi diagram
+        vor = Voronoi(player_positions)
+
+        # Plot the Voronoi diagram
+        voronoi_plot_2d(vor, ax=self.ax, show_vertices=False, show_points=False, line_colors='orange', line_width=2, line_alpha=0.6)
+
+        # Overlay player circles and annotations on top of the Voronoi diagram for clarity
+        for index, row in moments_df.iterrows():
+            player_id = row['playerId']
+            if player_id in self.player_circles:
+                circle = self.player_circles[player_id]
+                circle.center = (row['x'], row['y'])
+                self.ax.add_patch(circle)  # Make sure the circle is added to the plot
+
+                # Add annotations directly
+                self.ax.annotate(
+                    f"{self.players_dict[player_id][1]}",  # jersey_num
+                    xy=(row['x'], row['y']),
+                    color="white",
+                    ha="center",  # horizontal alignment
+                    va="center",  # vertical alignment
+                    fontweight="bold",
+                    fontsize=10
+                )
+
+        # Redraw the frame with the updated positions and Voronoi diagram overlay
         self.ax.figure.canvas.draw()
         plt.show()
