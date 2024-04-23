@@ -171,7 +171,10 @@ class AnimationUtil:
             self.ax.add_patch(circle)
         self.ax.add_patch(self.ball_circle)
 
-        # First, add a frame_id to group on
+        return annotations, clock_info
+
+    def precompute_frames(moments_df):
+         # First, add a frame_id to group on
         moments_df = moments_df.copy()
         moments_df.loc[:, 'frame_id'] = moments_df['wcTime'].factorize()[0]
         
@@ -189,7 +192,7 @@ class AnimationUtil:
         )
 
         # Now create the precomputed_data list
-        precomputed_data = [
+        return [
             {
                 'quarter': frame['period'].iloc[0],  # Assuming period is the same for all rows in the same frame
                 'game_clock': frame['gcTime'].iloc[0],
@@ -203,8 +206,6 @@ class AnimationUtil:
             }
             for idx, frame in player_frames.groupby('frame_id')
         ]
-
-        return precomputed_data, annotations, clock_info
 
     def animate(self, frame: int, precomputed_data, annotations, clock_info):
         moment = precomputed_data[frame]
@@ -234,7 +235,8 @@ class AnimationUtil:
         """Support method for display/save methods with caching support."""
         self.fig, self.ax = plt.subplots(figsize=(12, 8))
         moments_df = TrackingProcessor.extract_possession_moments(self.tracking_df, possession)
-        precomputed_data, annotations, clock_info = self.setup_animation(moments_df)
+        annotations, clock_info = self.setup_animation(moments_df)
+        precomputed_data = self.precompute_frames(moments_df)
 
         return animation.FuncAnimation(
             self.fig,
@@ -267,3 +269,5 @@ class AnimationUtil:
         
         # Save the animation
         anim.save(filename, writer=writer, dpi=80)  # You can adjust the DPI based on your resolution needs
+
+    
