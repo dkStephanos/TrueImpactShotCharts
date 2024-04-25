@@ -1,5 +1,6 @@
 # The code in this file was lifted and modified. The original source author/repo: https://github.com/linouk23/NBA-Player-Movements
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from IPython.display import HTML
 from matplotlib import animation
@@ -7,6 +8,8 @@ from matplotlib.patches import Circle
 from typing import List, Dict, Tuple
 from code.io.TrackingProcessor import TrackingProcessor
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from shapely.geometry import Polygon, Point
+from matplotlib.patches import Polygon as MplPolygon
 
 
 class VisUtil:
@@ -366,34 +369,36 @@ class VisUtil:
         self.ax.figure.canvas.draw()
         plt.show()
 
-    def plot_voronoi_at_timestamp(self, timestamp):
-        """Plot the Voronoi diagram for the players' positions at a specific timestamp with team-based cell shading."""
+    def plot_voronoi_at_timestamp(self, timestamp, basket_x):
+        """Plot the Voronoi diagram for the players' positions at a specific timestamp with team-based cell shading,
+        confined to the half of the court based on basket location."""
         self.fig, self.ax = plt.subplots(figsize=(12, 8))
         moments_df = self.tracking_df[self.tracking_df["wcTime"] == timestamp]
-
+        
         if moments_df.empty:
             raise ValueError("No data available for the specified timestamp")
 
-        annotations, clock_info = self.setup_court(
-            moments_df
-        )  # Set up the court and game elements
+        self.setup_court(moments_df)  # Setup the court visualization based on the current moments dataframe
 
-        # Extract player positions and team IDs, and filter out the ball
-        player_data = moments_df[moments_df["teamId"] != "-1"][
-            ["x", "y", "teamId"]
-        ].values
+        ball_data = moments_df[moments_df["teamId"] == "-1"].iloc[0] if not moments_df[moments_df["teamId"] == "-1"].empty else None
+        player_data = moments_df[moments_df["teamId"] != "-1"][["x", "y", "teamId"]].values
+        
+        # Define artificial boundary points at the edges of the court
+        boundary_points = np.array([[-47, -25], [-47, 25], [47, -25], [47, 25]])
+        all_points = np.vstack([player_data[:, :2], boundary_points])
 
-        # Extract ball data
-        ball_data = (
-            moments_df[moments_df["teamId"] == "-1"].iloc[0]
-            if not moments_df[moments_df["teamId"] == "-1"].empty
-            else None
-        )
+        vor = Voronoi(all_points)
 
-        # Compute the Voronoi diagram
-        vor = Voronoi(player_data[:, :2])
+        # Determine half-court boundaries based on the basket location
+        if basket_x > 0:
+            # Focus on the right half of the court
+            half_court_bounds = Polygon([(0, -25), (0, 25), (47, 25), (47, -25)])
+            plot_xlim = (0, 47)
+        else:
+            # Focus on the left half of the court
+            half_court_bounds = Polygon([(-47, -25), (-47, 25), (0, 25), (0, -25)])
+            plot_xlim = (-47, 0)
 
-        # Plot the Voronoi diagram, ensuring vertices are not shown
         voronoi_plot_2d(
             vor,
             ax=self.ax,
@@ -404,49 +409,42 @@ class VisUtil:
             line_alpha=0.6,
         )
 
-        # Iterate through each point's region
         for point_index, region_index in enumerate(vor.point_region):
             region = vor.regions[region_index]
-            if all(v >= 0 for v in region):  # Check if all vertices are within bounds (not open to infinity)
+            if all(v >= 0 for v in region) and region:  # Ensure the region is bounded
                 vertices = vor.vertices[region]
-                team_id = player_data[point_index][2]  # Safe as point_index corresponds to player_data directly
-                team_color = self.TEAM_COLOR_DICT.get(team_id, ['#808080'])[0]
-                polygon = plt.Polygon(vertices, color=team_color, alpha=0.3)
-                self.ax.add_patch(polygon)
+                if vertices.size > 0:
+                    polygon = Polygon(vertices)
+                    clipped_polygon = polygon.intersection(half_court_bounds)  # Clip to court bounds
+                    if not clipped_polygon.is_empty:
+                        team_id = player_data[point_index][2]
+                        team_color = self.TEAM_COLOR_DICT.get(team_id, ['#808080'])[0]
+                        patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
+                        self.ax.add_patch(patch)
+                    else:
+                        print(f"Clipped polygon is empty for point index {point_index}")
+                else:
+                    print(f"No vertices found for region at point index {point_index}")
             else:
-                # Optionally handle or log infinite regions if needed
-                print(f"Infinite region detected at index {region_index}, skipped from plotting.")
+                print(f"Region at point index {point_index} is unbounded or empty")
 
-
-        # Overlay player circles and annotations on top of the Voronoi diagram for clarity
+        # Set plot limits to the appropriate half-court dimensions
+        self.ax.set_xlim(plot_xlim)
+        self.ax.set_ylim(-25, 25)
+        
+        # Plot players
         for index, row in moments_df.iterrows():
             player_id = row["playerId"]
             if player_id in self.player_circles:
                 circle = self.player_circles[player_id]
                 circle.center = (row["x"], row["y"])
-                self.ax.add_patch(circle)  # Make sure the circle is added to the plot
+                self.ax.add_patch(circle)
+                self.ax.annotate(f"{self.players_dict[player_id][1]}", xy=(row["x"], row["y"]), color="white", ha="center", va="center", fontweight="bold", fontsize=10)
 
-                # Add annotations directly
-                self.ax.annotate(
-                    f"{self.players_dict[player_id][1]}",  # jersey_num
-                    xy=(row["x"], row["y"]),
-                    color="white",
-                    ha="center",  # horizontal alignment
-                    va="center",  # vertical alignment
-                    fontweight="bold",
-                    fontsize=10,
-                )
-
-        # Plot the ball
+        # Plot the ball if data is available
         if ball_data is not None:
-            ball_circle = Circle(
-                (ball_data["x"], ball_data["y"]),
-                ball_data["z"] / self.NORMALIZATION_COEF,
-                color="orange",
-                zorder=5,
-            )
+            ball_circle = Circle((ball_data["x"], ball_data["y"]), ball_data["z"] / self.NORMALIZATION_COEF, color="orange", zorder=5)
             self.ax.add_patch(ball_circle)
 
-        # Redraw the frame with the updated positions and Voronoi diagram overlay
         self.ax.figure.canvas.draw()
         plt.show()
