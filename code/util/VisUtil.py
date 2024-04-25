@@ -421,12 +421,6 @@ class VisUtil:
                         team_color = self.TEAM_COLOR_DICT.get(team_id, ['#808080'])[0]
                         patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
                         self.ax.add_patch(patch)
-                    else:
-                        print(f"Clipped polygon is empty for point index {point_index}")
-                else:
-                    print(f"No vertices found for region at point index {point_index}")
-            else:
-                print(f"Region at point index {point_index} is unbounded or empty")
 
         # Set plot limits to the appropriate half-court dimensions
         self.ax.set_xlim(plot_xlim)
