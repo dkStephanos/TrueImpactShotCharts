@@ -74,3 +74,45 @@ class EventProcessor:
         end_moment = event.iloc[-1]
         
         return start_moment['wcTime'], end_moment['wcTime']
+    
+    def extract_shots_and_rebounds(event_df, tracking_df):
+        """
+        Extracts shots and their corresponding rebounds, mapping the shot location to the rebound location with tracking data.
+        
+        Args:
+            event_df (pd.DataFrame): DataFrame containing game events.
+            tracking_df (pd.DataFrame): DataFrame containing tracking data with coordinates.
+
+        Returns:
+            pd.DataFrame: DataFrame with columns ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time']
+        """
+        # Filter for shots and rebounds in the event data
+        shots_df = event_df[event_df['eventType'] == 'SHOT']
+        rebounds_df = event_df[event_df['eventType'] == 'REB']
+
+        # Mapping of shots to their subsequent rebounds with coordinates
+        shot_rebound_mapping = []
+
+        # Iterate over rebounds to find the preceding shot
+        for rebound_index, rebound_row in rebounds_df.iterrows():
+            # Get the latest shot before the rebound within the same game and period
+            possible_shots = shots_df[(shots_df['wcTime'] < rebound_row['wcTime']) & (shots_df['gameId'] == rebound_row['gameId']) & (shots_df['period'] == rebound_row['period'])]
+            
+            if not possible_shots.empty:
+                latest_shot = possible_shots.iloc[-1]  # Get the last shot entry before the rebound
+                
+                # Get tracking data for shot and rebound moments
+                shot_tracking = tracking_df[(tracking_df['wcTime'] == latest_shot['wcTime']) & (tracking_df['playerId'] == latest_shot['playerId'])]
+                rebound_tracking = tracking_df[(tracking_df['wcTime'] == rebound_row['wcTime']) & (tracking_df['playerId'] == rebound_row['playerId'])]
+                
+                if not shot_tracking.empty and not rebound_tracking.empty:
+                    shot_rebound_mapping.append({
+                        'shot_x': shot_tracking.iloc[0]['x'],
+                        'shot_y': shot_tracking.iloc[0]['y'],
+                        'rebound_x': rebound_tracking.iloc[0]['x'],
+                        'rebound_y': rebound_tracking.iloc[0]['y'],
+                        'shot_time': latest_shot['wcTime'],
+                        'rebound_time': rebound_row['wcTime']
+                    })
+
+        return pd.DataFrame(shot_rebound_mapping)
