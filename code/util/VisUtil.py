@@ -2,15 +2,14 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from IPython.display import HTML
+from typing import Tuple
 from matplotlib import animation
-from matplotlib.patches import Circle, Arc, Rectangle
-from typing import List, Dict, Tuple
-from code.io.TrackingProcessor import TrackingProcessor
+from matplotlib.patches import Circle
+from IPython.display import HTML
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon
 from matplotlib.patches import Polygon as MplPolygon
-
+from code.io.TrackingProcessor import TrackingProcessor
 
 class VisUtil:
     INTERVAL: int = 2
