@@ -1,6 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from scipy.spatial import Voronoi
 from scipy.spatial.distance import euclidean
-
+from shapely.geometry import Point, Polygon
+from code.util.VisUtil import VisUtil
 
 class StatsUtil:
     def calculate_true_points(df):
@@ -139,3 +143,66 @@ class StatsUtil:
             )
             for i in range(player_range)
         ]
+
+    def calculate_rebound_chances(moments_df, shot_rebound_df, basket_x):
+        """
+        Calculates the rebound chances for each player based on Voronoi regions and dynamically created hexbin densities.
+
+        Args:
+            moments_df (DataFrame): DataFrame containing player positions and team IDs at a specific timestamp.
+            shot_rebound_df (DataFrame): DataFrame containing shot and rebound locations.
+            basket_x (float): X-coordinate of the basket to determine court side for Voronoi.
+
+        Returns:
+            dict: Dictionary keyed by player ID with the percentage chance of rebound.
+        """
+        # Create a new figure and axes for hexbin plot
+        fig, ax = plt.subplots(figsize=(12, 8))
+
+        # Mirror rebound data points across half court for plotting
+        shot_rebound_df = VisUtil.mirror_court_data(shot_rebound_df, 'rebound_x', basket_x)
+
+        # Plotting the data using hexbin for rebounds
+        hexbin = ax.hexbin(
+            shot_rebound_df['rebound_x'], shot_rebound_df['rebound_y'],
+            gridsize=int((47 / 1.5) / 2),  # based on court dimensions and desired hex radius
+            cmap='viridis',  # visually distinct colormap
+            edgecolors='black',
+            linewidth=0.5,
+            extent=[0 if basket_x > 0 else -47, 47 if basket_x > 0 else 0, -25, 25]  # Set the extent to match the half-court dimensions
+        )
+
+        # Calculate Voronoi regions
+        player_positions = moments_df.loc[moments_df['teamId'] != "-1"][['playerId', 'x', 'y']].values
+        vor = Voronoi(player_positions[:, 1:])
+        
+        # Map each Voronoi region to its player
+        player_regions = {}
+        for player_id, region_index in zip(player_positions[:, 0], vor.point_region):
+            region = vor.regions[region_index]
+            if all(v >= 0 for v in region):  # Check if all vertices indices are non-negative
+                polygon = Polygon(vor.vertices[region])
+                player_regions[int(player_id)] = polygon
+
+        # Collect hexbin centers and their counts
+        rebound_densities = hexbin.get_array()
+        hexbin_centers = hexbin.get_offsets()
+
+        # Calculate total potential rebounds per player
+        player_rebound_potentials = {int(player_id): 0 for player_id in player_regions.keys()}
+        total_rebound_potential = 0
+
+        for center, density in zip(hexbin_centers, rebound_densities):
+            point = Point(center[0], center[1])
+            for player_id, region in player_regions.items():
+                if region.contains(point):
+                    player_rebound_potentials[player_id] += density
+                    total_rebound_potential += density
+
+        # Normalize to get probabilities
+        rebound_chances = {player_id: (potential / total_rebound_potential) * 100
+                        for player_id, potential in player_rebound_potentials.items() if total_rebound_potential > 0}
+
+        plt.close(fig)  # Close the plot as it's not needed for visualization
+
+        return rebound_chances
