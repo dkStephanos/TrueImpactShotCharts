@@ -456,5 +456,44 @@ class VisUtil:
 
         self.ax.figure.canvas.draw()
         plt.show()
+            
+    def plot_rebound_hexmap(shot_rebound_df):
+        """
+        Plots a hexmap of rebound locations on the basketball court. Each cell represents approximately
+        1.5 feet in radius, and cells are color-weighted based on the number of rebounds collected.
+        This version adjusts the plot to display only half-court and changes the color scale for better visibility.
+        """
+        # Create a new figure and axes
+        fig, ax = plt.subplots(figsize=(12, 8))
         
-  
+        # Draw the court
+        VisUtil.setup_court(ax)
+        
+        # Calculate grid size based on court dimensions and desired hex radius
+        gridsize = int((47 / 1.5) / 2)  # Adjusting calculation for half-court width
+
+        # Plotting rebounds using hexbin
+        hexbin = ax.hexbin(
+            shot_rebound_df['rebound_x'], shot_rebound_df['rebound_y'],
+            gridsize=gridsize,  # Adjusted grid size for better scaling
+            cmap='viridis',  # Changed to a more visually distinct colormap
+            bins='log',  # Logarithmic scale to enhance visibility for sparse data
+            edgecolors='black',
+            linewidth=0.5,
+            extent=[0, 47, -25, 25]  # Set the extent to match the half-court dimensions
+        )
+
+        # Add a color bar
+        cbar = plt.colorbar(hexbin, ax=ax, pad=0.01)
+        cbar.set_label('Rebound Density (log scale)')
+
+        # Set plot limits to only show half-court
+        ax.set_xlim(0, 47)  # Half-court width
+        ax.set_ylim(-25, 25)  # Court height
+
+        # Remove the axis ticks and labels
+        ax.axis('off')
+
+        # Display the plot
+        plt.show()
+
