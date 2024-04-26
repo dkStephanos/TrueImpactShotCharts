@@ -497,3 +497,22 @@ class VisUtil:
         # Display the plot
         plt.show()
 
+    def mirror_court_data(df, column_name, court_length=94):
+        """
+        Mirrors data points across the center line of a basketball court to reflect them onto one half.
+
+        Args:
+            df (DataFrame): DataFrame containing the data with coordinates to be mirrored.
+            column_name (str): The name of the column in the DataFrame that contains the x-coordinates.
+            court_length (int, optional): Total length of the basketball court. Default is 94 feet (NBA standard).
+
+        Returns:
+            DataFrame: A DataFrame with the specified coordinates mirrored onto one half of the court.
+        """
+        # Center line calculation based on the standard court length
+        center_line = court_length / 2
+
+        # Apply the mirroring transformation to the specified column
+        df[column_name] = df[column_name].apply(lambda x: x if x < center_line else court_length - x)
+
+        return df
