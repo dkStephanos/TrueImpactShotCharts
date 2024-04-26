@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from IPython.display import HTML
 from matplotlib import animation
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Arc, Rectangle
 from typing import List, Dict, Tuple
 from code.io.TrackingProcessor import TrackingProcessor
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -95,34 +95,24 @@ class VisUtil:
         self.last_animation = (
             {}
         )  # To store the reference to the last animation, outer dict key is interval, inner is event_num
-        self.court = plt.imread("data/img/fullcourt.png")
-
-    def setup_court(self, moments_df):
-        """Configure the matplotlib figure and axes for the animation."""
-
-        x_min, x_max, y_min, y_max = self.COURT_DIMS
-        self.ax.set_xlim(x_min, x_max)
-        self.ax.set_ylim(y_min, y_max)
-        self.ax.axis("off")
-
-        # Display the court image
-        self.ax.imshow(self.court, zorder=0, extent=[x_min, x_max, y_min, y_max])
-        self.ax.set_aspect("equal", "box")
-
-        # Prepare table
-        column_labels = tuple([self.home_team_tuple[0], self.away_team_tuple[0]])
-        column_colours = tuple(
-            [
-                self.home_team_tuple[1],
-                self.away_team_tuple[1],
-            ]
-        )
-        cell_colours = [column_colours for _ in range(5)]
-
+        self.court = VisUtil.load_court_image()
+        
+    @staticmethod
+    def load_court_image():
+        return plt.imread("data/img/fullcourt.png")
+    
+    def setup_visualization(self, moments_df):
+        VisUtil.setup_court(self.ax)
+        home_players_ids, away_players_ids = self.extract_moment_players(moments_df)
+        self.setup_players_and_ball(home_players_ids, away_players_ids)
+        return self.setup_labels(home_players_ids, away_players_ids)
+        
+    def extract_moment_players(self, moments_df):
         # Collect home and away player_ids (ball has a teamId of -1)
         players_df = moments_df.loc[
             moments_df["teamId"] != -1, ["playerId", "playerName", "teamId"]
         ].drop_duplicates()
+        
         home_players_ids = list(
             players_df.loc[players_df["teamId"] == self.home_team_id][
                 "playerId"
@@ -133,8 +123,61 @@ class VisUtil:
                 "playerId"
             ].unique()
         )
-        all_players_ids = home_players_ids + away_players_ids
+        
+        return home_players_ids, away_players_ids
+    
+    @classmethod
+    def setup_court(cls, ax):
+        x_min, x_max, y_min, y_max = cls.COURT_DIMS
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+        ax.axis("off")
 
+        # Display the court image
+        ax.imshow(VisUtil.load_court_image(), zorder=0, extent=[x_min, x_max, y_min, y_max])
+        ax.set_aspect("equal", "box")
+
+    def setup_players_and_ball(self, home_players_ids, away_players_ids):
+        # Set up and add circles for the players and ball
+        self.player_circles = {
+            player_id: Circle(
+                (0, 0),  # Initial position; this should be updated dynamically
+                self.PLAYER_CIRCLE_SIZE,
+                color=self.TEAM_COLOR_DICT[
+                    (
+                        self.home_team_id
+                        if player_id in home_players_ids
+                        else self.away_team_id
+                    )
+                ][
+                    0
+                ],  # Team color based on player's team
+            )
+            for player_id in home_players_ids + away_players_ids
+        }
+
+        self.ball_circle = Circle(
+            (0, 0),  # Initial ball position
+            self.PLAYER_CIRCLE_SIZE,
+            color="#E2561A",  # Hardcoded orange for the ball
+        )
+
+        # Add all player circles and the ball circle to the axes
+        for circle in self.player_circles.values():
+            self.ax.add_patch(circle)
+        self.ax.add_patch(self.ball_circle)
+    
+    def setup_labels(self, home_players_ids, away_players_ids):
+        # Prepare table
+        column_labels = tuple([self.home_team_tuple[0], self.away_team_tuple[0]])
+        column_colours = tuple(
+            [
+                self.home_team_tuple[1],
+                self.away_team_tuple[1],
+            ]
+        )
+        cell_colours = [column_colours for _ in range(5)]
+        
         # Create player cell entries
         home_players = [
             " #".join(
@@ -148,7 +191,7 @@ class VisUtil:
             )
             for player_id in away_players_ids
         ]
-
+        
         # Render and scale the table
         table = plt.table(
             cellText=list(zip(home_players, away_players)),
@@ -184,38 +227,9 @@ class VisUtil:
                 verticalalignment="center",
                 fontweight="bold",
             )
-            for player_id in all_players_ids
+            for player_id in home_players_ids + away_players_ids
         }
-
-        # Set up and add circles for the players and ball
-        self.player_circles = {
-            player_id: Circle(
-                (0, 0),  # Initial position; this should be updated dynamically
-                self.PLAYER_CIRCLE_SIZE,
-                color=self.TEAM_COLOR_DICT[
-                    (
-                        self.home_team_id
-                        if player_id in home_players_ids
-                        else self.away_team_id
-                    )
-                ][
-                    0
-                ],  # Team color based on player's team
-            )
-            for player_id in all_players_ids
-        }
-
-        self.ball_circle = Circle(
-            (0, 0),  # Initial ball position
-            self.PLAYER_CIRCLE_SIZE,
-            color="#E2561A",  # Hardcoded orange for the ball
-        )
-
-        # Add all player circles and the ball circle to the axes
-        for circle in self.player_circles.values():
-            self.ax.add_patch(circle)
-        self.ax.add_patch(self.ball_circle)
-
+        
         return annotations, clock_info
 
     def precompute_frames(moments_df):
@@ -294,7 +308,7 @@ class VisUtil:
         moments_df = TrackingProcessor.extract_possession_moments(
             self.tracking_df, possession
         )
-        annotations, clock_info = self.setup_court(moments_df)
+        annotations, clock_info = self.setup_visualization(moments_df)
         precomputed_data = self.precompute_frames(moments_df)
 
         return animation.FuncAnimation(
@@ -340,7 +354,7 @@ class VisUtil:
             raise ValueError("No data available for the specified timestamp")
 
         # Setup the court and game elements
-        annotations, clock_info = self.setup_court(moments_df)
+        annotations, clock_info = self.setup_visualization(moments_df)
 
         # Since we only need one frame, we can directly take the necessary data
         moment = moments_df.iloc[0]
@@ -378,7 +392,7 @@ class VisUtil:
         if moments_df.empty:
             raise ValueError("No data available for the specified timestamp")
 
-        self.setup_court(moments_df)  # Setup the court visualization based on the current moments dataframe
+        self.setup_visualization(moments_df)  # Setup the court visualization based on the current moments dataframe
 
         ball_data = moments_df[moments_df["teamId"] == "-1"].iloc[0] if not moments_df[moments_df["teamId"] == "-1"].empty else None
         player_data = moments_df[moments_df["teamId"] != "-1"][["x", "y", "teamId"]].values
@@ -442,3 +456,5 @@ class VisUtil:
 
         self.ax.figure.canvas.draw()
         plt.show()
+        
+  
