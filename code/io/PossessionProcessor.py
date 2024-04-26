@@ -21,6 +21,13 @@ class PossessionProcessor:
         possessions_df = pd.read_csv('data/src/possessions.csv', dtype={'gameId': str, 'teamId': str, 'possId': str})
         return possessions_df.loc[possessions_df['gameId'] == game_id].reset_index(drop=True)
     
+    def load_games(game_ids: list = "all"):
+        possessions_df = pd.read_csv('data/src/possessions.csv', dtype={'gameId': str, 'teamId': str, 'possId': str})
+        if game_ids != "all":
+            possessions_df = possessions_df.loc[possessions_df['gameId'].isin(game_ids)].reset_index(drop=True)
+        
+        return possessions_df
+    
     def extract_possessions_by_outcome(possessions_df, outcome):
         return possessions_df.loc[possessions_df['outcome'] == outcome].reset_index(drop=True)
 

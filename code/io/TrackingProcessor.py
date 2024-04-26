@@ -21,6 +21,13 @@ class TrackingProcessor:
         tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         return tracking_df.loc[tracking_df['gameId'] == game_id].reset_index(drop=True)
     
+    def load_games(game_ids: list = "all"):
+        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
+        if game_ids != "all":
+            tracking_df = tracking_df.loc[tracking_df['gameId'].isin(game_ids)].reset_index(drop=True)
+        
+        return tracking_df
+    
     def player_positions_at_moment(moment_df, timestamp, player_ids="all"):
         # Handle the player_ids input
         if isinstance(player_ids, list):
