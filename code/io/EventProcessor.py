@@ -97,7 +97,7 @@ class EventProcessor:
         merged_df = pd.merge(rebounds_df, shots_df, on=['gameId', 'period', 'teamId'], suffixes=('_reb', '_shot'))
 
         # Filter to ensure that only valid shot-rebound pairs are considered
-        valid_pairs = merged_df[merged_df['wcTime_shot'] < merged_df['wcTime_reb']]
+        valid_pairs = merged_df[merged_df['wcTime_shot'] < merged_df['wcTime_reb']].copy()
 
         # Sort to get the latest shot before each rebound
         valid_pairs.sort_values(by='wcTime_shot', ascending=False, inplace=True)
