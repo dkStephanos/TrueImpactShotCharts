@@ -457,11 +457,17 @@ class VisUtil:
         self.ax.figure.canvas.draw()
         plt.show()
             
-    def plot_rebound_hexmap(shot_rebound_df):
+    def plot_court_hexmap(df, x_col, y_col, label='Density (log scale)'):
         """
-        Plots a hexmap of rebound locations on the basketball court. Each cell represents approximately
-        1.5 feet in radius, and cells are color-weighted based on the number of rebounds collected.
+        Plots a hexmap of locations on the basketball court based on provided x and y coordinates.
+        Each cell represents approximately 1.5 feet in radius, and cells are color-weighted based on the density.
         This version adjusts the plot to display only half-court and changes the color scale for better visibility.
+
+        Args:
+            df (DataFrame): The DataFrame containing the data to plot.
+            x_col (str): The name of the column in df that contains the x coordinates.
+            y_col (str): The name of the column in df that contains the y coordinates.
+            label (str): Chart label to be applied.
         """
         # Create a new figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -469,16 +475,13 @@ class VisUtil:
         # Draw the court
         VisUtil.setup_court(ax)
         
-        # Calculate grid size based on court dimensions and desired hex radius
-        gridsize = int((47 / 1.5) / 2)  # Adjusting calculation for half-court width
-        
-        # Mirror data points accross half court for plotting
-        shot_rebound_df = VisUtil.mirror_court_data(shot_rebound_df, 'rebound_x')
+        # Mirror data points across half court for plotting
+        df = VisUtil.mirror_court_data(df, x_col)
 
-        # Plotting rebounds using hexbin
+        # Plotting the data using hexbin
         hexbin = ax.hexbin(
-            shot_rebound_df['rebound_x'], shot_rebound_df['rebound_y'],
-            gridsize=gridsize,  # Adjusted grid size for better scaling
+            df[x_col], df[y_col],
+            gridsize=int((47 / 1.5) / 2),  # based on court dimensions and desired hex radius
             cmap='viridis',  # Changed to a more visually distinct colormap
             bins='log',  # Logarithmic scale to enhance visibility for sparse data
             edgecolors='black',
@@ -488,7 +491,26 @@ class VisUtil:
 
         # Add a color bar
         cbar = plt.colorbar(hexbin, ax=ax, pad=0.01)
-        cbar.set_label('Rebound Density (log scale)')
+        cbar.set_label(label)
+
+        # Retrieve counts from hexbin and determine tick labels directly from the bin counts
+        counts = hexbin.get_array()
+        unique_counts = np.unique(counts[counts > 0]).astype(int)  # Get unique non-zero counts as integers
+
+        # Sort unique counts to ensure they are in increasing order for setting ticks
+        sorted_counts = np.sort(unique_counts)
+
+        # Generate indices to pick exactly 8 labels, if there are enough unique counts
+        num_labels = min(8, len(sorted_counts))  # Use 8 or fewer if there aren't enough unique counts
+        indices = np.linspace(0, len(sorted_counts) - 1, num=num_labels, dtype=int)
+        selected_ticks = sorted_counts[indices]
+
+        # Apply these selected counts as ticks to the color bar
+        cbar.set_ticks(selected_ticks)  # Set ticks at selected counts
+        cbar.set_ticklabels(selected_ticks)  # Use the selected counts as labels
+        
+        # Disable minor ticks on the colorbar to avoid extra ticks
+        cbar.ax.minorticks_off()
 
         # Set plot limits to only show half-court
         ax.set_xlim(0, 47)  # Half-court width
