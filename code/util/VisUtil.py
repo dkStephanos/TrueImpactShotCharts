@@ -308,7 +308,7 @@ class VisUtil:
             self.tracking_df, possession
         )
         annotations, clock_info = self.setup_visualization(moments_df)
-        precomputed_data = self.precompute_frames(moments_df)
+        precomputed_data = VisUtil.precompute_frames(moments_df)
 
         return animation.FuncAnimation(
             self.fig,
