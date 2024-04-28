@@ -1,6 +1,18 @@
 import pandas as pd
 import numpy as np
+from enum import Enum
 
+class ShotRegion(Enum):
+    LEFT_CORNER_THREE = "Left Corner Three"
+    RIGHT_CORNER_THREE = "Right Corner Three"
+    LEFT_WING_THREE = "Left Wing Three"
+    RIGHT_WING_THREE = "Right Wing Three"
+    LEFT_BASELINE_MID = "Left Baseline Mid-Range"
+    RIGHT_BASELINE_MID = "Right Baseline Mid-Range"
+    LEFT_BASELINE_ELBOW = "Left Baseline Elbow"
+    RIGHT_BASELINE_ELBOW = "Right Baseline Elbow"
+    CENTER_THREE = "Center Three"
+    RESTRICTED_AREA = "Restricted Area"
 
 class FeatureUtil:
     def is_position_in_paint(x, y):
@@ -369,3 +381,47 @@ class FeatureUtil:
         return FeatureUtil.find_ball_moment(
             df, FeatureUtil.is_past_far_three_point_line, basket_x
         )
+
+    def classify_shot(x, y, basket_x):
+        """
+        Classify a shot based on its location on the court using detailed categories.
+
+        Args:
+        x (float): The x-coordinate of the shot.
+        y (float): The y-coordinate of the shot.
+        basket_x (float): The x-coordinate of the basket.
+
+        Returns:
+        ShotRegion: The region of the court where the shot was taken.
+        """
+        if FeatureUtil.is_in_restricted_area(x, y, basket_x):
+            return ShotRegion.RESTRICTED_AREA
+
+        # Define specific areas
+        if FeatureUtil.is_in_corner(x, y, basket_x):
+            if x > 0:
+                return ShotRegion.RIGHT_CORNER_THREE
+            else:
+                return ShotRegion.LEFT_CORNER_THREE
+
+        if FeatureUtil.is_past_far_three_point_line(x, y, basket_x):
+            if abs(y) < 22:  # assuming wing shots have y less than 22 feet from the center
+                if x > 0:
+                    return ShotRegion.RIGHT_WING_THREE
+                else:
+                    return ShotRegion.LEFT_WING_THREE
+            if abs(y) > 22:  # top of the arc shots
+                return ShotRegion.CENTER_THREE
+
+        # Mid-range shots
+        if not FeatureUtil.is_past_far_three_point_line(x, y, basket_x) and not FeatureUtil.is_in_paint(x, y, basket_x):
+            if abs(y) < 14:  # baseline mid-range
+                if x > 0:
+                    return ShotRegion.RIGHT_BASELINE_MID
+                else:
+                    return ShotRegion.LEFT_BASELINE_MID
+            else:  # baseline elbow shots
+                if x > 0:
+                    return ShotRegion.RIGHT_BASELINE_ELBOW
+                else:
+                    return ShotRegion.LEFT_BASELINE_ELBOW
