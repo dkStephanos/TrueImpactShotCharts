@@ -434,7 +434,7 @@ class FeatureUtil:
         Args:
             shots_df (DataFrame): DataFrame containing shot locations and times.
             possession_df (DataFrame): DataFrame containing possession data with basketX values, start and end times.
-            classify_shot (function): A function to classify shot locations based on x, y, and basketX.
+            classify_shot (function): A function to classify shot locations based on x, y, and basket_x.
 
         Returns:
             DataFrame: The input DataFrame augmented with a new column for shot classification.
@@ -456,7 +456,7 @@ class FeatureUtil:
 
         # Apply the classification function
         valid_shots['shot_classification'] = valid_shots.apply(
-            lambda row: classify_shot(row['shot_x'], row['shot_y'], row['basketX']),
+            lambda row: classify_shot(row['shot_x'], row['shot_y'], row['basket_x']),
             axis=1
         )
 
