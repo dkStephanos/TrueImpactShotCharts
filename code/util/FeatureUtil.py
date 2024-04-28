@@ -382,7 +382,7 @@ class FeatureUtil:
             df, FeatureUtil.is_past_far_three_point_line, basket_x
         )
 
-    def classify_shot(x, y, basket_x):
+    def classify_shot_region(x, y, basket_x):
         """
         Classify a shot based on its location on the court using detailed categories.
 
@@ -425,3 +425,40 @@ class FeatureUtil:
                     return ShotRegion.RIGHT_BASELINE_ELBOW
                 else:
                     return ShotRegion.LEFT_BASELINE_ELBOW
+
+    def classify_shot_locations(shots_df, possession_df, classify_shot):
+        """
+        Classifies the locations of shots in the DataFrame using the basketX from the possession DataFrame
+        based on the shot_time matching within the possession window.
+
+        Args:
+            shots_df (DataFrame): DataFrame containing shot locations and times.
+            possession_df (DataFrame): DataFrame containing possession data with basketX values, start and end times.
+            classify_shot (function): A function to classify shot locations based on x, y, and basketX.
+
+        Returns:
+            DataFrame: The input DataFrame augmented with a new column for shot classification.
+        """
+        # Create a temporary key for merging based on possession intervals
+        temp_possession_df = possession_df.copy()
+        shots_df = shots_df.copy()
+        temp_possession_df['key'] = 1
+        shots_df['key'] = 1
+
+        # Create a cartesian product of shots and possessions
+        merged_df = pd.merge(shots_df, temp_possession_df, on='key').drop('key', axis=1)
+
+        # Filter rows where the shot_time falls within the possession interval
+        valid_shots = merged_df[
+            (merged_df['shot_time'] >= merged_df['wcStart']) &
+            (merged_df['shot_time'] <= merged_df['wcEnd'])
+        ]
+
+        # Apply the classification function
+        valid_shots['shot_classification'] = valid_shots.apply(
+            lambda row: classify_shot(row['shot_x'], row['shot_y'], row['basketX']),
+            axis=1
+        )
+
+        # Return the resulting DataFrame with classified shots
+        return valid_shots
