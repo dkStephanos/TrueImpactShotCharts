@@ -147,14 +147,17 @@ class StatsUtil:
     def calculate_rebound_chances(moments_df, shot_rebound_df, basket_x):
         """
         Calculates the rebound chances for each player based on Voronoi regions and dynamically created hexbin densities.
+        Additionally, computes rebound chances by team ID.
 
         Args:
             moments_df (DataFrame): DataFrame containing player positions and team IDs at a specific timestamp.
-            shot_rebound_df (DataFrame): DataFrame containing shot and rebound locations.
+            shot_rebound_df (DataFrame): DataFrame containing shot and rebound locations. (Used as context for rebound distribution stats)
             basket_x (float): X-coordinate of the basket to determine court side for Voronoi.
 
         Returns:
-            dict: Dictionary keyed by player ID with the percentage chance of rebound.
+            tuple: 
+                - dict keyed by player ID with the percentage chance of rebound.
+                - dict keyed by team ID with the percentage chance of rebound.
         """
         # Create a new figure and axes for hexbin plot
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -173,23 +176,26 @@ class StatsUtil:
         )
 
         # Calculate Voronoi regions
-        player_positions = moments_df.loc[moments_df['teamId'] != "-1"][['playerId', 'x', 'y']].values
-        vor = Voronoi(player_positions[:, 1:])
-        
-        # Map each Voronoi region to its player
+        player_positions = moments_df.loc[moments_df['teamId'] != "-1"][['playerId', 'x', 'y', 'teamId']].values
+        vor = Voronoi(player_positions[:, 1:3])
+
+        # Map each Voronoi region to its player and team
         player_regions = {}
-        for player_id, region_index in zip(player_positions[:, 0], vor.point_region):
+        player_teams = {}
+        for player_id, team_id, region_index in zip(player_positions[:, 0], player_positions[:, 3], vor.point_region):
             region = vor.regions[region_index]
             if all(v >= 0 for v in region):  # Check if all vertices indices are non-negative
                 polygon = Polygon(vor.vertices[region])
                 player_regions[int(player_id)] = polygon
+                player_teams[int(player_id)] = int(team_id)
 
         # Collect hexbin centers and their counts
         rebound_densities = hexbin.get_array()
         hexbin_centers = hexbin.get_offsets()
 
-        # Calculate total potential rebounds per player
+        # Calculate total potential rebounds per player and team
         player_rebound_potentials = {int(player_id): 0 for player_id in player_regions.keys()}
+        team_rebound_potentials = {}
         total_rebound_potential = 0
 
         for center, density in zip(hexbin_centers, rebound_densities):
@@ -197,12 +203,19 @@ class StatsUtil:
             for player_id, region in player_regions.items():
                 if region.contains(point):
                     player_rebound_potentials[player_id] += density
+                    team_id = player_teams[player_id]
+                    if team_id in team_rebound_potentials:
+                        team_rebound_potentials[team_id] += density
+                    else:
+                        team_rebound_potentials[team_id] = density
                     total_rebound_potential += density
 
         # Normalize to get probabilities
         rebound_chances = {player_id: (potential / total_rebound_potential) * 100
                         for player_id, potential in player_rebound_potentials.items() if total_rebound_potential > 0}
+        team_rebound_chances = {team_id: (potential / total_rebound_potential) * 100
+                                for team_id, potential in team_rebound_potentials.items() if total_rebound_potential > 0}
 
-        plt.close(fig)  # Close the plot as it's not needed for visualization
+        plt.show(fig)  # Close the plot as it's not needed for visualization
 
-        return rebound_chances
+        return rebound_chances, team_rebound_chances
