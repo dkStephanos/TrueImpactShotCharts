@@ -144,14 +144,15 @@ class StatsUtil:
             for i in range(player_range)
         ]
 
-    def calculate_rebound_chances(moments_df, shot_rebound_df, basket_x):
+    def calculate_rebound_chances(moments_df, shot_rebound_df, timestamp, basket_x):
         """
-        Calculates the rebound chances for each player based on Voronoi regions and dynamically created hexbin densities.
-        Additionally, computes rebound chances by team ID.
+        Calculates the rebound chances for each player based on Voronoi regions and dynamically created hexbin densities
+        at a specific timestamp. Additionally, computes rebound chances by team ID.
 
         Args:
-            moments_df (DataFrame): DataFrame containing player positions and team IDs at a specific timestamp.
+            moments_df (DataFrame): DataFrame containing player positions and team IDs.
             shot_rebound_df (DataFrame): DataFrame containing shot and rebound locations. (Used as context for rebound distribution stats)
+            timestamp (float): Specific game time moment for which player positions are considered.
             basket_x (float): X-coordinate of the basket to determine court side for Voronoi.
 
         Returns:
@@ -159,6 +160,9 @@ class StatsUtil:
                 - dict keyed by player ID with the percentage chance of rebound.
                 - dict keyed by team ID with the percentage chance of rebound.
         """
+        # Filter moments data to the specific timestamp
+        moments_df = moments_df[moments_df['wcTime'] == timestamp]
+
         # Create a new figure and axes for hexbin plot
         fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -175,7 +179,7 @@ class StatsUtil:
             extent=[0 if basket_x > 0 else -47, 47 if basket_x > 0 else 0, -25, 25]  # Set the extent to match the half-court dimensions
         )
 
-        # Calculate Voronoi regions
+        # Calculate Voronoi regions for players at the given timestamp
         player_positions = moments_df.loc[moments_df['teamId'] != "-1"][['playerId', 'x', 'y', 'teamId']].values
         vor = Voronoi(player_positions[:, 1:3])
 
@@ -216,6 +220,7 @@ class StatsUtil:
         team_rebound_chances = {team_id: (potential / total_rebound_potential) * 100
                                 for team_id, potential in team_rebound_potentials.items() if total_rebound_potential > 0}
 
-        plt.show(fig)  # Close the plot as it's not needed for visualization
+        plt.close(fig)  # Close the plot as it's not needed for visualization
 
         return rebound_chances, team_rebound_chances
+
