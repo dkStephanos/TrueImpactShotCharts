@@ -31,5 +31,5 @@ class PossessionProcessor:
     def extract_possessions_by_outcome(possessions_df, outcome):
         return possessions_df.loc[possessions_df['outcome'] == outcome].reset_index(drop=True)
 
-    def extract_possesion_by_timestamp(possessions_df, timestamp):
+    def extract_possession_by_timestamp(possessions_df, timestamp):
         return possessions_df.loc[(possessions_df['wcStart'] <= timestamp) & (possessions_df['wcEnd'] >= timestamp)].iloc[0]
