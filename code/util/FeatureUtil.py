@@ -434,25 +434,28 @@ class FeatureUtil:
         Args:
             shots_df (DataFrame): DataFrame containing shot locations and times.
             possession_df (DataFrame): DataFrame containing possession data with basketX values, start and end times.
-            classify_shot (function): A function to classify shot locations based on x, y, and basket_x.
+            classify_shot (function): A function to classify shot locations based on x, y, and basketX.
 
         Returns:
             DataFrame: The input DataFrame augmented with a new column for shot classification.
         """
-        # Create a temporary key for merging based on possession intervals
-        temp_possession_df = possession_df.copy()
+        # Ensure shot_time, wcStart, and wcEnd are properly typed
         shots_df = shots_df.copy()
+        possession_df = possession_df.copy()
+
+        # Create a temporary key for merging to avoid large Cartesian products
+        temp_possession_df = possession_df.copy()
         temp_possession_df['key'] = 1
         shots_df['key'] = 1
 
-        # Create a cartesian product of shots and possessions
+        # Merge using a key then drop the key to clean up
         merged_df = pd.merge(shots_df, temp_possession_df, on='key').drop('key', axis=1)
 
-        # Filter rows where the shot_time falls within the possession interval
+        # Efficiently filter rows within time bounds
         valid_shots = merged_df[
             (merged_df['shot_time'] >= merged_df['wcStart']) &
             (merged_df['shot_time'] <= merged_df['wcEnd'])
-        ]
+        ].copy()  # Make a copy if you plan to modify this DataFrame to avoid SettingWithCopyWarning
 
         # Apply the classification function
         valid_shots['shot_classification'] = valid_shots.apply(
@@ -460,5 +463,4 @@ class FeatureUtil:
             axis=1
         )
 
-        # Return the resulting DataFrame with classified shots
         return valid_shots
