@@ -1,5 +1,5 @@
 import pandas as pd
-
+from code.io.PossessionProcessor import PossessionProcessor
 class EventProcessor:
     """
     csv cols: 
@@ -82,17 +82,19 @@ class EventProcessor:
         
         return start_moment['wcTime'], end_moment['wcTime']
         
-    def extract_shots_and_rebounds(event_df, tracking_df):
+    def extract_shots_and_rebounds(event_df, tracking_df, possession_df):
         """
         Extracts shots and their corresponding rebounds, mapping the shot location to the rebound location using tracking data.
         Includes the teamId of the team that secured the rebound to compare against calculated rebound chances.
+        Now also includes the basketX position from possessions data for each shot based on the timestamp.
 
         Args:
             event_df (DataFrame): DataFrame containing all game events.
             tracking_df (DataFrame): DataFrame containing tracking data for ball and players.
+            possession_df (DataFrame): DataFrame containing possession data with basketX values.
 
         Returns:
-            DataFrame: Contains matched shot and rebound locations, times, and rebounding teamId.
+            DataFrame: Contains matched shot and rebound locations, times, rebounding teamId, and basketX.
         """
         # Extract the ball locations from the tracking_df
         tracking_df = tracking_df[tracking_df["teamId"] == "-1"].copy()
@@ -114,7 +116,7 @@ class EventProcessor:
         valid_pairs = valid_pairs.drop_duplicates(subset=['gameId', 'period', 'wcTime_reb'])
 
         # Merge tracking data for the positions
-        valid_pairs = pd.merge(valid_pairs, tracking_df[['gameId', 'wcTime', 'x', 'y']], left_on=['gameId', 'wcTime_shot'], right_on=['gameId', 'wcTime'], how='left')
+        valid_pairs = pd.merge(valid_pairs, tracking_df[['gameId', 'wcTime', 'x', 'y']], left_on=['gameId', 'wcTime_shot'], right_on=['gameId', 'wcTime'], how='left', suffixes=('', '_shot'))
         valid_pairs.rename(columns={'x': 'shot_x', 'y': 'shot_y'}, inplace=True)
         valid_pairs.drop(columns=['wcTime'], inplace=True)
 
@@ -122,9 +124,14 @@ class EventProcessor:
         valid_pairs.rename(columns={'x': 'rebound_x', 'y': 'rebound_y'}, inplace=True)
         valid_pairs.drop(columns=['wcTime'], inplace=True)
 
+        # Apply possession data for basketX based on the shot time
+        valid_pairs['basketX'] = valid_pairs['wcTime_shot'].apply(
+            lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['basketX']
+        )
+
         # Select and rename relevant columns for the result, including the rebounding teamId
-        result_df = valid_pairs[['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'wcTime_shot', 'wcTime_reb', 'teamId_reb']]
-        result_df.columns = ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time', 'rebound_teamId']
+        result_df = valid_pairs[['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'wcTime_shot', 'wcTime_reb', 'teamId_reb', 'basketX']]
+        result_df.columns = ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time', 'rebound_teamId', 'basketX']
 
         return result_df
 
