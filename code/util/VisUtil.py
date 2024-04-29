@@ -10,6 +10,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from shapely.geometry import Polygon
 from matplotlib.patches import Polygon as MplPolygon
 from code.io.TrackingProcessor import TrackingProcessor
+from code.util.FeatureUtil import ShotRegion
 
 class VisUtil:
     INTERVAL: int = 2
@@ -519,4 +520,36 @@ class VisUtil:
         ax.axis('off')
 
         # Display the plot
+        plt.show()
+        
+    @staticmethod
+    def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
+        """
+        Plot shot attempts and overlay shot regions on a half-court diagram.
+        
+        Args:
+        shots_df (DataFrame): DataFrame containing shot coordinates and optionally shot outcomes.
+        ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
+                                                              If None, creates a new figure and axis.
+        """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(12, 11))
+            VisUtil.setup_court(ax)
+
+        # Plot the shots
+        ax.scatter(shots_df[x_col], shots_df[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Shots')
+
+        # Overlay shot regions
+        for region in ShotRegion:
+            polygon = region.value[1]  # Access the Polygon object from the ShotRegion enum
+            if region == ShotRegion.BEYOND_HALFCOURT:
+                continue  # Skip plotting the beyond halfcourt area for clarity
+            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color='orange', alpha=0.2, linewidth=1.5, linestyle='--')
+            ax.add_patch(patch)
+            # Label the region
+            centroid = polygon.centroid
+            ax.text(centroid.x, centroid.y, str(region), color='black', ha='center', va='center', fontsize=10)
+
+        # Set additional plot properties
+        ax.legend(loc='upper right')
         plt.show()
