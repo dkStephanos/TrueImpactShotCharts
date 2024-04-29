@@ -1,7 +1,7 @@
 import pandas as pd
 from code.io.PossessionProcessor import PossessionProcessor
 
-class ActionUtil:
+class ActionProcessor:
     """
     Class for identifying/extracting game actions using a combnination of event, possesssion and tracking data
     """
