@@ -13,6 +13,7 @@ class ShotRegion(Enum):
     RIGHT_BASELINE_ELBOW = "Right Baseline Elbow"
     CENTER_THREE = "Center Three"
     RESTRICTED_AREA = "Restricted Area"
+    BEYOND_HALFCOURT = "Beyond Half-court"
 
 class FeatureUtil:
     def is_position_in_paint(x, y):
@@ -394,6 +395,9 @@ class FeatureUtil:
         Returns:
         ShotRegion: The region of the court where the shot was taken.
         """
+        if FeatureUtil.is_past_halfcourt(x, y, -basket_x):
+            return ShotRegion.BEYOND_HALFCOURT
+        
         if FeatureUtil.is_in_restricted_area(x, y, basket_x):
             return ShotRegion.RESTRICTED_AREA
 
