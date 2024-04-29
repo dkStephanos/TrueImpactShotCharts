@@ -25,6 +25,8 @@ class ShotRegion(Enum):
         return self.value[1]
 
 class FeatureUtil:
+    # Court location features
+    # ----------------------------------------------------
     def is_position_in_paint(x, y):
         """
         Determine if a position (x, y) is in the paint of an NBA basketball court centered at (0, 0).
@@ -296,6 +298,8 @@ class FeatureUtil:
         # Determine if any offensive player is dynamically closer to the basket than all defenders
         return min_off_dynamic_distance < min_def_dynamic_distance
 
+    # Feature extractors
+    # ----------------------------------------------------
     def find_closest_defenders(df, off_id, timestamp, unique_defender=False):
         """
         Find the closest defender to each offensive player at a given moment, optimized to use squared distances for efficiency.
@@ -392,6 +396,8 @@ class FeatureUtil:
             df, FeatureUtil.is_past_far_three_point_line, basket_x
         )
 
+    # Shot classification
+    # ----------------------------------------------------
     def classify_shot_region(x, y, basket_x):
         """
         Classify a shot based on its location on the court using detailed categories.
