@@ -410,40 +410,34 @@ class FeatureUtil:
         Returns:
         ShotRegion: The region of the court where the shot was taken.
         """
-        if FeatureUtil.is_beyond_halfcourt(x, y, -basket_x):
+        if FeatureUtil.is_beyond_halfcourt(x, y, basket_x):
             return ShotRegion.BEYOND_HALFCOURT
         
         if FeatureUtil.is_in_restricted_area(x, y, basket_x):
             return ShotRegion.RESTRICTED_AREA
 
-        # Define specific areas
-        if FeatureUtil.is_in_corner(x, y, basket_x):
-            if x >= 0:
-                return ShotRegion.RIGHT_CORNER_THREE
-            else:
-                return ShotRegion.LEFT_CORNER_THREE
+        if FeatureUtil.is_in_left_corner_three(x, y, basket_x):
+            return ShotRegion.LEFT_CORNER_THREE
+        if FeatureUtil.is_in_right_corner_three(x, y, basket_x):
+            return ShotRegion.RIGHT_CORNER_THREE
 
-        if FeatureUtil.is_past_far_three_point_line(x, y, basket_x):
-            if abs(y) <= 22:  # assuming wing shots have y less than 22 feet from the center
-                if x >= 0:
-                    return ShotRegion.RIGHT_WING_THREE
-                else:
-                    return ShotRegion.LEFT_WING_THREE
-            if abs(y) >= 22:  # top of the arc shots
-                return ShotRegion.CENTER_THREE
+        if FeatureUtil.is_in_left_wing_three(x, y, basket_x):
+            return ShotRegion.LEFT_WING_THREE
+        if FeatureUtil.is_in_right_wing_three(x, y, basket_x):
+            return ShotRegion.RIGHT_WING_THREE
 
-        # Mid-range shots
-        if not FeatureUtil.is_past_far_three_point_line(x, y, basket_x) and not FeatureUtil.is_in_paint(x, y, basket_x):
-            if abs(y) <= 14:  # baseline mid-range
-                if x >= 0:
-                    return ShotRegion.RIGHT_BASELINE_MID
-                else:
-                    return ShotRegion.LEFT_BASELINE_MID
-            else:  # baseline elbow shots
-                if x >= 0:
-                    return ShotRegion.RIGHT_ELBOW_MID
-                else:
-                    return ShotRegion.LEFT_ELBOW_MID
+        if FeatureUtil.is_in_center_three(x, y, basket_x):
+            return ShotRegion.CENTER_THREE
+
+        if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
+            return ShotRegion.LEFT_BASELINE_MID
+        if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
+            return ShotRegion.RIGHT_BASELINE_MID
+
+        if FeatureUtil.is_in_left_elbow_mid(x, y, basket_x):
+            return ShotRegion.LEFT_ELBOW_MID
+        if FeatureUtil.is_in_right_elbow_mid(x, y, basket_x):
+            return ShotRegion.RIGHT_ELBOW_MID
 
     def classify_shot_locations(shots_df, possession_df, classify_shot):
         """
