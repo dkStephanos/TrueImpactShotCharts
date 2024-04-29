@@ -18,29 +18,32 @@ class ShotRegion(Enum):
     CENTER_THREE = "Center Three"
     BEYOND_HALFCOURT = "Beyond Half-court"
 
-    @property
-    def polygon(self):
-        arc = LineString([(x, 22 - (0 if x < 22 else (x - 22) * 0.8819)) for x in np.linspace(0, 22, 30)])
-        left_three_arc = scale(arc, xfact=-1)  # Reflect for the left side
-        
-        polygons = {
-            'RESTRICTED_AREA': Polygon([(-8, -19), (8, -19), (8, 0), (-8, 0)]),
-            'LEFT_CORNER_THREE': Polygon([(-47, -25), (-22, -25), (-22, -3), (-47, -3)]),
-            'RIGHT_CORNER_THREE': Polygon([(47, -25), (22, -25), (22, -3), (47, -3)]),
-            'LEFT_WING_THREE': Polygon(unary_union([LineString([(-22, -3), (0, -3), (0, 22)]), left_three_arc]).convex_hull),
-            'RIGHT_WING_THREE': Polygon(unary_union([LineString([(22, -3), (0, -3), (0, 22)]), arc]).convex_hull),
-            'LEFT_BASELINE_MID': Polygon([(-47, 8), (-22, 8), (-22, -3), (-47, -3)]),
-            'RIGHT_BASELINE_MID': Polygon([(47, 8), (22, 8), (22, -3), (47, -3)]),
-            'LEFT_ELBOW_MID': Polygon([(-22, 19), (0, 19), (0, 8), (-22, 8)]),
-            'RIGHT_ELBOW_MID': Polygon([(22, 19), (0, 19), (0, 8), (22, 8)]),
-            'CENTER_THREE': Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)]),
-            'BEYOND_HALFCOURT': Polygon([(0, -25), (0, 25), (47, 25), (47, -25)]),
-        }
-        return polygons[self.name]
+    def __init__(self, description):
+        self.description = description
 
     @property
-    def description(self):
-        return self.value
+    def polygon(self):
+        arc_points = [(x, 22 - (0 if x < 22 else (x - 22) * 0.8819)) for x in np.linspace(0, 22, 100)]
+        arc = LineString(arc_points)
+        left_three_arc = unary_union([LineString([(-22, -3), (0, -3)]), scale(arc, xfact=-1, yfact=1)])
+        right_three_arc = unary_union([LineString([(22, -3), (0, -3)]), arc])
+
+        # Polygon definitions for each region
+        region_polygons = {
+            ShotRegion.RESTRICTED_AREA: Polygon([(-8, -19), (8, -19), (8, -25), (-8, -25)]),
+            ShotRegion.LEFT_CORNER_THREE: Polygon([(-47, -3), (-22, -3), (-22, -25), (-47, -25)]),
+            ShotRegion.RIGHT_CORNER_THREE: Polygon([(47, -3), (22, -3), (22, -25), (47, -25)]),
+            ShotRegion.LEFT_WING_THREE: left_three_arc.convex_hull,
+            ShotRegion.RIGHT_WING_THREE: right_three_arc.convex_hull,
+            ShotRegion.LEFT_BASELINE_MID: Polygon([(-47, 8), (-22, 8), (-22, -3), (-47, -3)]),
+            ShotRegion.RIGHT_BASELINE_MID: Polygon([(47, 8), (22, 8), (22, -3), (47, -3)]),
+            ShotRegion.LEFT_ELBOW_MID: Polygon([(-22, 19), (0, 19), (0, 8), (-22, 8)]),
+            ShotRegion.RIGHT_ELBOW_MID: Polygon([(22, 19), (0, 19), (0, 8), (22, 8)]),
+            ShotRegion.CENTER_THREE: Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)]),
+            ShotRegion.BEYOND_HALFCOURT: Polygon([(0, -25), (0, 25), (47, 25), (47, -25)])
+        }
+
+        return region_polygons[self]
 
     @property
     def color(self):
@@ -58,7 +61,7 @@ class ShotRegion(Enum):
             'BEYOND_HALFCOURT': 'grey'
         }
         return region_colors[self.name]
-
+    
 class FeatureUtil:
     # Court location features
     # ----------------------------------------------------
