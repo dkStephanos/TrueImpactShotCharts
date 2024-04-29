@@ -9,8 +9,8 @@ class ShotRegion(Enum):
     RIGHT_WING_THREE = "Right Wing Three"
     LEFT_BASELINE_MID = "Left Baseline Mid-Range"
     RIGHT_BASELINE_MID = "Right Baseline Mid-Range"
-    LEFT_BASELINE_ELBOW = "Left Baseline Elbow"
-    RIGHT_BASELINE_ELBOW = "Right Baseline Elbow"
+    LEFT_ELBOW_MID = "Left Elbow Mid-Range"
+    RIGHT_ELBOW_MID = "Right Elbow Mid-Range"
     CENTER_THREE = "Center Three"
     RESTRICTED_AREA = "Restricted Area"
     BEYOND_HALFCOURT = "Beyond Half-court"
@@ -403,32 +403,32 @@ class FeatureUtil:
 
         # Define specific areas
         if FeatureUtil.is_in_corner(x, y, basket_x):
-            if x > 0:
+            if x >= 0:
                 return ShotRegion.RIGHT_CORNER_THREE
             else:
                 return ShotRegion.LEFT_CORNER_THREE
 
         if FeatureUtil.is_past_far_three_point_line(x, y, basket_x):
-            if abs(y) < 22:  # assuming wing shots have y less than 22 feet from the center
-                if x > 0:
+            if abs(y) <= 22:  # assuming wing shots have y less than 22 feet from the center
+                if x >= 0:
                     return ShotRegion.RIGHT_WING_THREE
                 else:
                     return ShotRegion.LEFT_WING_THREE
-            if abs(y) > 22:  # top of the arc shots
+            if abs(y) >= 22:  # top of the arc shots
                 return ShotRegion.CENTER_THREE
 
         # Mid-range shots
         if not FeatureUtil.is_past_far_three_point_line(x, y, basket_x) and not FeatureUtil.is_in_paint(x, y, basket_x):
-            if abs(y) < 14:  # baseline mid-range
-                if x > 0:
+            if abs(y) <= 14:  # baseline mid-range
+                if x >= 0:
                     return ShotRegion.RIGHT_BASELINE_MID
                 else:
                     return ShotRegion.LEFT_BASELINE_MID
             else:  # baseline elbow shots
-                if x > 0:
-                    return ShotRegion.RIGHT_BASELINE_ELBOW
+                if x >= 0:
+                    return ShotRegion.RIGHT_ELBOW_MID
                 else:
-                    return ShotRegion.LEFT_BASELINE_ELBOW
+                    return ShotRegion.LEFT_ELBOW_MID
 
     def classify_shot_locations(shots_df, possession_df, classify_shot):
         """
