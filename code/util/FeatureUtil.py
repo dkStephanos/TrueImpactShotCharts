@@ -27,7 +27,57 @@ class ShotRegion(Enum):
 class FeatureUtil:
     # Court location features
     # ----------------------------------------------------
-    def is_position_in_paint(x, y):
+    def is_in_region(x, y, region: ShotRegion, basket_x):
+        """
+        Generic method to determine if a position (x, y) is in the given shot region.
+        Args:
+        x (float): The x-coordinate of the position.
+        y (float): The y-coordinate of the position.
+        region (ShotRegion): The region to check against.
+        basket_x (float): The x-coordinate of the basket, determines which half of the court to consider.
+        Returns:
+        bool: True if the position is in the specified region, otherwise False.
+        """
+        point = Point(x, y)
+        polygon = region.polygon
+        if basket_x < 0:
+            polygon = scale(polygon, xfact=-1, origin=(0, 0))  # Flip for left side basket
+        return polygon.contains(point)
+
+    def is_in_restricted_area(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.RESTRICTED_AREA, basket_x)
+
+    def is_in_left_corner_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_CORNER_THREE, basket_x)
+
+    def is_in_right_corner_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_CORNER_THREE, basket_x)
+
+    def is_in_left_wing_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_WING_THREE, basket_x)
+
+    def is_in_right_wing_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_WING_THREE, basket_x)
+
+    def is_in_left_baseline_mid(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_BASELINE_MID, basket_x)
+
+    def is_in_right_baseline_mid(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_BASELINE_MID, basket_x)
+
+    def is_in_left_elbow_mid(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_ELBOW_MID, basket_x)
+
+    def is_in_right_elbow_mid(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_ELBOW_MID, basket_x)
+
+    def is_in_center_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.CENTER_THREE, basket_x)
+
+    def is_beyond_halfcourt(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegion.BEYOND_HALFCOURT, basket_x)
+
+    def is_in_paint(x, y):
         """
         Determine if a position (x, y) is in the paint of an NBA basketball court centered at (0, 0).
         The paint is 16 feet wide and extends from the baseline up to 19 feet towards the center.
@@ -51,20 +101,6 @@ class FeatureUtil:
         in_horizontal_bounds = -PAINT_WIDTH_HALF <= x <= PAINT_WIDTH_HALF
 
         return in_vertical_bounds and in_horizontal_bounds
-
-    def is_past_halfcourt(x, y, basket_x):
-        """
-        Determine if a position is past the half-court relative to a given basket location on the x-axis.
-
-        Args:
-        x (float): The x-coordinate of the position.
-        basket_x (float): The x-coordinate of the basket, either 41.75 or -41.75.
-
-        Returns:
-        bool: True if the position is past the half-court towards the offensive basket, otherwise False.
-        """
-        # Adjust the condition to reflect the movement towards the offensive basket
-        return (basket_x > 0 and x > 0) or (basket_x < 0 and x < 0)
 
     def is_past_far_three_point_line(x, y, basket_x):
         """
@@ -125,27 +161,6 @@ class FeatureUtil:
             )
 
         return in_zone_of_death
-
-    def is_in_corner(x, y, basket_x):
-        """
-        Determine if a position (x, y) is in the corner area suitable for three-point shots on a standard NBA basketball court, relative to a specific basket.
-
-        Args:
-        x (float): The x-coordinate of the position.
-        y(f): The y-coordinate of the position.
-        basket_x (float): The x-coordinate of the basket, determines which half of the court is relevant.
-
-        Returns:
-        bool: True if the position is in the designated corner area for three-point shots in the specified half of the court, otherwise False.
-        """
-        CORNER_THREE_X = 22  # X position where corner three starts
-        CORNER_THREE_Y = 3  # Y position for corner three alignment
-
-        is_correct_half = (x > 0) if basket_x > 0 else (x < 0)
-        return is_correct_half and (
-            (x <= CORNER_THREE_X or x >= 94 - CORNER_THREE_X)
-            and abs(y) >= CORNER_THREE_Y
-        )
 
     def is_in_paint(x, y, basket_x):
         """
@@ -244,22 +259,6 @@ class FeatureUtil:
         SIDELINE_BUFFER = 3  # Define 'near' as within 3 feet of the sideline
         
         return abs(y) >= (COURT_WIDTH_HALF - SIDELINE_BUFFER)
-
-    def is_in_restricted_area(x, y, basket_x):
-        """
-        Determine if a position (x, y) is in the restricted area under the basket, relevant for fouling rules.
-
-        Args:
-        x (float): The x-coordinate of the position.
-        y (float): The y-coordinate of the position.
-        basket_x (float): The x-coordinate of the basket to ensure the area is defined relative to the correct basket.
-
-        Returns:
-        bool: True if the position is in the restricted area, otherwise False.
-        """
-        RESTRICTED_AREA_RADIUS = 4  # The restricted area radius is typically 4 feet from the center of the basket
-
-        return (x - basket_x) ** 2 + y**2 <= RESTRICTED_AREA_RADIUS**2
 
     def is_leading_offensive_player(df, off_team_id, basket_x):
         """
@@ -389,7 +388,7 @@ class FeatureUtil:
         return None
 
     def find_ball_crossing_halfcourt(df, basket_x):
-        return FeatureUtil.find_ball_moment(df, FeatureUtil.is_past_halfcourt, basket_x)
+        return FeatureUtil.find_ball_moment(df, FeatureUtil.is_beyond_halfcourt, basket_x)
 
     def find_ball_crossing_far_three_point_line(df, basket_x):
         return FeatureUtil.find_ball_moment(
@@ -410,7 +409,7 @@ class FeatureUtil:
         Returns:
         ShotRegion: The region of the court where the shot was taken.
         """
-        if FeatureUtil.is_past_halfcourt(x, y, -basket_x):
+        if FeatureUtil.is_beyond_halfcourt(x, y, -basket_x):
             return ShotRegion.BEYOND_HALFCOURT
         
         if FeatureUtil.is_in_restricted_area(x, y, basket_x):
