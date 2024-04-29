@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from enum import Enum
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
+from shapely.affinity import scale
 
 class ShotRegion(Enum):
     LEFT_CORNER_THREE = "Left Corner Three", Polygon([(-47, -25), (-22, -25), (-22, -4), (-47, -4)])
