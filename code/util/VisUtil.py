@@ -534,30 +534,32 @@ class VisUtil:
         Plot shot attempts and overlay shot regions on a half-court diagram.
         
         Args:
-        shots_df (DataFrame): DataFrame containing shot coordinates and optionally shot outcomes.
-        ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
-                                                              If None, creates a new figure and axis.
+            shots_df (DataFrame): DataFrame containing shot coordinates and optionally shot outcomes.
+            x_col (str): The name of the column in shots_df that contains the x coordinates.
+            y_col (str): The name of the column in shots_df that contains the y coordinates.
+            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
+                                                                  If None, creates a new figure and axis.
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
             VisUtil.setup_court(ax)
 
         # Mirror shots to one side of the court for half-court visualization
-        # Mirror data points across half court for plotting
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col)
 
         # Plot the shots
         ax.scatter(shots_df[x_col], shots_df[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Shots')
+        VisUtil.set_halfcourt(ax)
 
         # Overlay shot regions
         for region in ShotRegion:
+            print(region)
             if region == ShotRegion.BEYOND_HALFCOURT:
                 continue  # Optionally skip drawing the beyond halfcourt area
-            polygon = region.value[1]  # Access the Polygon object from the ShotRegion enum
-            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=region.color, alpha=0.3, linewidth=1.5, linestyle='--')
+            patch = MplPolygon(list(region.polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=region.color, alpha=0.3, linewidth=1.5, linestyle='--')
             ax.add_patch(patch)
             # Label the region
-            centroid = polygon.centroid
+            centroid = region.polygon.centroid
             ax.text(centroid.x, centroid.y, region.value[0], color='black', ha='center', va='center', fontsize=10)
 
         ax.legend(loc='upper right')
