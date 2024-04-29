@@ -6,25 +6,41 @@ from shapely.ops import unary_union
 from shapely.affinity import scale
 
 class ShotRegion(Enum):
-    # Define arcs for three-point lines
-    arc = LineString([(x, 22 - (0 if x < 22 else (x - 22) * 0.8819)) for x in np.linspace(0, 22, 30)])
-    left_three_arc = scale(arc, xfact=-1)  # Reflect for the left side
+    RESTRICTED_AREA = "Restricted Area"
+    LEFT_CORNER_THREE = "Left Corner Three"
+    RIGHT_CORNER_THREE = "Right Corner Three"
+    LEFT_WING_THREE = "Left Wing Three"
+    RIGHT_WING_THREE = "Right Wing Three"
+    LEFT_BASELINE_MID = "Left Baseline Mid-Range"
+    RIGHT_BASELINE_MID = "Right Baseline Mid-Range"
+    LEFT_ELBOW_MID = "Left Elbow Mid-Range"
+    RIGHT_ELBOW_MID = "Right Elbow Mid-Range"
+    CENTER_THREE = "Center Three"
+    BEYOND_HALFCOURT = "Beyond Half-court"
 
-    RESTRICTED_AREA = ("Restricted Area", Polygon([(-8, -19), (8, -19), (8, -25), (-8, -25)]))
-    LEFT_CORNER_THREE = ("Left Corner Three", Polygon([(-47, -3), (-22, -3), (-22, -25), (-47, -25)]))
-    RIGHT_CORNER_THREE = ("Right Corner Three", Polygon([(47, -3), (22, -3), (22, -25), (47, -25)]))
-    LEFT_WING_THREE = ("Left Wing Three", Polygon(unary_union([LineString([(-22, -3), (0, -3), (0, 22)]), left_three_arc]).convex_hull))
-    RIGHT_WING_THREE = ("Right Wing Three", Polygon(unary_union([LineString([(22, -3), (0, -3), (0, 22)]), arc]).convex_hull))
-    LEFT_BASELINE_MID = ("Left Baseline Mid-Range", Polygon([(-47, 8), (-22, 8), (-22, -3), (-47, -3)]))
-    RIGHT_BASELINE_MID = ("Right Baseline Mid-Range", Polygon([(47, 8), (22, 8), (22, -3), (47, -3)]))
-    LEFT_ELBOW_MID = ("Left Elbow Mid-Range", Polygon([(-22, 19), (0, 19), (0, 8), (-22, 8)]))
-    RIGHT_ELBOW_MID = ("Right Elbow Mid-Range", Polygon([(22, 19), (0, 19), (0, 8), (22, 8)]))
-    CENTER_THREE = ("Center Three", Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)]))
-    BEYOND_HALFCOURT = ("Beyond Half-court", Polygon([(0, -25), (0, 25), (47, 25), (47, -25)]))
+    @property
+    def polygon(self):
+        arc = LineString([(x, 22 - (0 if x < 22 else (x - 22) * 0.8819)) for x in np.linspace(0, 22, 30)])
+        left_three_arc = scale(arc, xfact=-1)  # Reflect for the left side
+        
+        polygons = {
+            'RESTRICTED_AREA': Polygon([(-8, -19), (8, -19), (8, 0), (-8, 0)]),
+            'LEFT_CORNER_THREE': Polygon([(-47, -25), (-22, -25), (-22, -3), (-47, -3)]),
+            'RIGHT_CORNER_THREE': Polygon([(47, -25), (22, -25), (22, -3), (47, -3)]),
+            'LEFT_WING_THREE': Polygon(unary_union([LineString([(-22, -3), (0, -3), (0, 22)]), left_three_arc]).convex_hull),
+            'RIGHT_WING_THREE': Polygon(unary_union([LineString([(22, -3), (0, -3), (0, 22)]), arc]).convex_hull),
+            'LEFT_BASELINE_MID': Polygon([(-47, 8), (-22, 8), (-22, -3), (-47, -3)]),
+            'RIGHT_BASELINE_MID': Polygon([(47, 8), (22, 8), (22, -3), (47, -3)]),
+            'LEFT_ELBOW_MID': Polygon([(-22, 19), (0, 19), (0, 8), (-22, 8)]),
+            'RIGHT_ELBOW_MID': Polygon([(22, 19), (0, 19), (0, 8), (22, 8)]),
+            'CENTER_THREE': Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)]),
+            'BEYOND_HALFCOURT': Polygon([(0, -25), (0, 25), (47, 25), (47, -25)]),
+        }
+        return polygons[self.name]
 
-    def __init__(self, description, polygon):
-        self.description = description
-        self.polygon = polygon
+    @property
+    def description(self):
+        return self.value
 
     @property
     def color(self):
