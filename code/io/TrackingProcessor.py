@@ -65,3 +65,23 @@ class TrackingProcessor:
         def_ids = list(tracking_df.loc[tracking_df["teamId"] != off_team_id]["playerId"].dropna().unique())
         
         return off_ids, def_ids
+    
+    def mirror_court_data(tracking_df, column_name, basket_x=41.75):
+        """
+        Mirrors data points across the center line of a basketball court to a specified half, based on the x-coordinate of the basket.
+
+        Args:
+            tracking_df (DataFrame): DataFrame containing the data with coordinates to be mirrored.
+            column_name (str): The name of the column in the DataFrame that contains the x-coordinates.
+            basket_x (float): The x-coordinate of the basket to which data should be mirrored. This determines
+                            whether the data is mirrored to the left or right half, based on a standard NBA court dimension.
+
+        Returns:
+            DataFrame: A DataFrame with the specified coordinates mirrored onto the desired half of the court.
+        """
+        mid_court_x = 0
+
+        # Mirror the data depending on the position of the basket
+        tracking_df[column_name] = tracking_df[column_name].apply(lambda x: x if (basket_x > 0 and x > mid_court_x) or (basket_x < 0 and x < mid_court_x) else -x + 2 * basket_x)
+
+        return tracking_df
