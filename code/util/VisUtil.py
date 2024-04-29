@@ -136,6 +136,13 @@ class VisUtil:
         # Display the court image
         ax.imshow(VisUtil.load_court_image(), zorder=0, extent=[x_min, x_max, y_min, y_max])
         ax.set_aspect("equal", "box")
+    
+    @classmethod
+    def set_halfcourt(cls, ax, basket_x=41.75):
+        if basket_x > 0:
+            ax.set_xlim(0, 47)
+        else:
+            ax.set_xlim(-47, 0)
 
     def setup_players_and_ball(self, home_players_ids, away_players_ids):
         # Set up and add circles for the players and ball
@@ -513,8 +520,7 @@ class VisUtil:
         cbar.ax.minorticks_off()
 
         # Set plot limits to only show half-court
-        ax.set_xlim(0, 47)  # Half-court width
-        ax.set_ylim(-25, 25)  # Court height
+        VisUtil.set_halfcourt(ax)
 
         # Remove the axis ticks and labels
         ax.axis('off')
@@ -536,20 +542,23 @@ class VisUtil:
             fig, ax = plt.subplots(figsize=(12, 11))
             VisUtil.setup_court(ax)
 
+        # Mirror shots to one side of the court for half-court visualization
+        # Mirror data points across half court for plotting
+        shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col)
+
         # Plot the shots
         ax.scatter(shots_df[x_col], shots_df[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Shots')
 
         # Overlay shot regions
         for region in ShotRegion:
-            polygon = region.value[1]  # Access the Polygon object from the ShotRegion enum
             if region == ShotRegion.BEYOND_HALFCOURT:
-                continue  # Skip plotting the beyond halfcourt area for clarity
-            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color='orange', alpha=0.2, linewidth=1.5, linestyle='--')
+                continue  # Optionally skip drawing the beyond halfcourt area
+            polygon = region.value[1]  # Access the Polygon object from the ShotRegion enum
+            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=region.color, alpha=0.3, linewidth=1.5, linestyle='--')
             ax.add_patch(patch)
             # Label the region
             centroid = polygon.centroid
-            ax.text(centroid.x, centroid.y, str(region), color='black', ha='center', va='center', fontsize=10)
+            ax.text(centroid.x, centroid.y, region.value[0], color='black', ha='center', va='center', fontsize=10)
 
-        # Set additional plot properties
         ax.legend(loc='upper right')
         plt.show()
