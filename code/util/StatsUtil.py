@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import euclidean
 from shapely.geometry import Point, Polygon
-from code.util.VisUtil import VisUtil
+from code.io.TrackingProcessor import TrackingProcessor
 
 class StatsUtil:
     def calculate_true_points(df):
@@ -167,7 +166,7 @@ class StatsUtil:
         fig, ax = plt.subplots(figsize=(12, 8))
 
         # Mirror rebound data points across half court for plotting
-        shot_rebound_df = VisUtil.mirror_court_data(shot_rebound_df, 'rebound_x', basket_x)
+        shot_rebound_df = TrackingProcessor.mirror_court_data(shot_rebound_df, 'rebound_x', basket_x)
 
         # Plotting the data using hexbin for rebounds
         hexbin = ax.hexbin(
