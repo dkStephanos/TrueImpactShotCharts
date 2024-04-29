@@ -1,19 +1,28 @@
 import pandas as pd
 import numpy as np
 from enum import Enum
+from shapely.geometry import Polygon
 
 class ShotRegion(Enum):
-    LEFT_CORNER_THREE = "Left Corner Three"
-    RIGHT_CORNER_THREE = "Right Corner Three"
-    LEFT_WING_THREE = "Left Wing Three"
-    RIGHT_WING_THREE = "Right Wing Three"
-    LEFT_BASELINE_MID = "Left Baseline Mid-Range"
-    RIGHT_BASELINE_MID = "Right Baseline Mid-Range"
-    LEFT_ELBOW_MID = "Left Elbow Mid-Range"
-    RIGHT_ELBOW_MID = "Right Elbow Mid-Range"
-    CENTER_THREE = "Center Three"
-    RESTRICTED_AREA = "Restricted Area"
-    BEYOND_HALFCOURT = "Beyond Half-court"
+    LEFT_CORNER_THREE = "Left Corner Three", Polygon([(-47, -25), (-22, -25), (-22, -4), (-47, -4)])
+    RIGHT_CORNER_THREE = "Right Corner Three", Polygon([(47, -25), (22, -25), (22, -4), (47, -4)])
+    LEFT_WING_THREE = "Left Wing Three", Polygon([(-22, -4), (0, -4), (0, 22), (-22, 22)])
+    RIGHT_WING_THREE = "Right Wing Three", Polygon([(22, -4), (0, -4), (0, 22), (22, 22)])
+    LEFT_BASELINE_MID = "Left Baseline Mid-Range", Polygon([(-47, -4), (-22, -4), (-22, 8), (-47, 8)])
+    RIGHT_BASELINE_MID = "Right Baseline Mid-Range", Polygon([(47, -4), (22, -4), (22, 8), (47, 8)])
+    LEFT_ELBOW_MID = "Left Elbow Mid-Range", Polygon([(-22, 8), (0, 8), (0, 19), (-22, 19)])
+    RIGHT_ELBOW_MID = "Right Elbow Mid-Range", Polygon([(22, 8), (0, 8), (0, 19), (22, 19)])
+    CENTER_THREE = "Center Three", Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)])
+    RESTRICTED_AREA = "Restricted Area", Polygon([(-8, -25), (8, -25), (8, -19), (-8, -19)])
+    BEYOND_HALFCOURT = "Beyond Half-court", Polygon([(0, -25), (0, 25), (47, 25), (47, -25)])
+
+    @property
+    def description(self):
+        return self.value[0]
+
+    @property
+    def polygon(self):
+        return self.value[1]
 
 class FeatureUtil:
     def is_position_in_paint(x, y):
