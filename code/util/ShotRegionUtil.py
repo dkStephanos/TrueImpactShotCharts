@@ -4,7 +4,8 @@ from shapely.geometry import Point, Polygon
 # Constants for court dimensions
 BASKET_X = 41.75
 THREE_POINT_RADIUS = 23.75
-THREE_POINT_SIDELINE_DISTANCE = 14
+THREE_POINT_CURVE_START = 14
+CORNER_THREE_DISTANCE_TO_SIDELINE = 3
 CORNER_THREE_DISTANCE = 22
 RESTRICTED_AREA_RADIUS = 4
 COURT_LENGTH = 94
@@ -33,64 +34,66 @@ restricted_area = Point(BASKET_X, 0).buffer(RESTRICTED_AREA_RADIUS).difference(P
 
 class ShotRegionUtil:
     regions = {
-        'RESTRICTED_AREA': restricted_area,
         'RIGHT_CORNER_THREE': Polygon([
-            (BASKET_X, Y_MIN),
-            (X_MAX, Y_MIN),
-            (X_MAX, -THREE_POINT_SIDELINE_DISTANCE),
-            tuple(right_arc[0].coords[0]),
+            (X_MAX - THREE_POINT_CURVE_START, -COURT_WIDTH_HALF),  # Bottom right corner of the court
+            (X_MAX - THREE_POINT_CURVE_START, -COURT_WIDTH_HALF + CORNER_THREE_DISTANCE_TO_SIDELINE),  # Start of the arc from the right sideline
+            (X_MAX, -COURT_WIDTH_HALF + CORNER_THREE_DISTANCE_TO_SIDELINE),  # Start of the arc from the baseline
+            (X_MAX, -COURT_WIDTH_HALF),  # Baseline
         ]),
+        'LEFT_CORNER_THREE': Polygon([
+            (X_MAX - THREE_POINT_CURVE_START, COURT_WIDTH_HALF),  # Top left corner of the court
+            (X_MAX - THREE_POINT_CURVE_START, COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE),  # Start of the arc from the left sideline
+            (X_MAX, COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE),  # Start of the arc from the baseline
+            (X_MAX, COURT_WIDTH_HALF),  # Baseline
+        ]),
+        'BEYOND_HALFCOURT': Polygon([
+            (X_MIN, Y_MIN),
+            (X_MIN, Y_MAX),
+            (-X_MAX, Y_MAX),
+            (-X_MAX, Y_MIN),
+        ]),
+        
+        
+        'RESTRICTED_AREA': restricted_area,
         'RIGHT_WING_THREE': Polygon([
             tuple(right_arc[0].coords[0]),
             tuple(right_arc[-1].coords[0]),
-            (BASKET_X, -THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X, -THREE_POINT_CURVE_START),
         ]),
         'RIGHT_BASELINE_MID': Polygon([
-            (BASKET_X, -THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X, -THREE_POINT_CURVE_START),
             (BASKET_X, Y_MIN),
             (BASKET_X - FREE_THROW_LINE_DISTANCE, Y_MIN),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
         ]),
         'RIGHT_ELBOW_MID': Polygon([
-            (BASKET_X, -THREE_POINT_SIDELINE_DISTANCE),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X, -THREE_POINT_CURVE_START),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
             (BASKET_X - FREE_THROW_LINE_DISTANCE, -ELBOW_DISTANCE_FROM_CENTER),
             (BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
         ]),
-        'LEFT_CORNER_THREE': Polygon([
-            (BASKET_X, THREE_POINT_SIDELINE_DISTANCE),
-            (X_MAX, THREE_POINT_SIDELINE_DISTANCE),
-            (X_MAX, Y_MAX),
-            (BASKET_X, Y_MAX),
-        ]),
         'LEFT_WING_THREE': Polygon([
             tuple(right_arc[-1].coords[0]),
-            (BASKET_X, THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X, THREE_POINT_CURVE_START),
             (BASKET_X, Y_MAX),
         ]),
         'LEFT_BASELINE_MID': Polygon([
             (BASKET_X, Y_MAX),
             (BASKET_X - FREE_THROW_LINE_DISTANCE, Y_MAX),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_SIDELINE_DISTANCE),
-            (BASKET_X, THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
+            (BASKET_X, THREE_POINT_CURVE_START),
         ]),
         'LEFT_ELBOW_MID': Polygon([
             (BASKET_X, ELBOW_DISTANCE_FROM_CENTER),
             (BASKET_X - FREE_THROW_LINE_DISTANCE, ELBOW_DISTANCE_FROM_CENTER),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_SIDELINE_DISTANCE),
-            (BASKET_X, THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
+            (BASKET_X, THREE_POINT_CURVE_START),
         ]),
         'CENTER_THREE': Polygon([
             tuple(right_arc[-1].coords[0]),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_SIDELINE_DISTANCE),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_SIDELINE_DISTANCE),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
+            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
             tuple(right_arc[0].coords[0]),
-        ]),
-        'BEYOND_HALFCOURT': Polygon([
-            (X_MIN, Y_MIN),
-            (X_MIN, Y_MAX),
-            (BASKET_X, Y_MAX),
-            (BASKET_X, Y_MIN),
         ]),
     }
 
