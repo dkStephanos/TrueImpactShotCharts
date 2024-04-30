@@ -71,9 +71,9 @@ class ShotRegionUtil:
     left_wing_arc += [(0, COURT_WIDTH_HALF)]
     right_wing_arc += [(0, -COURT_WIDTH_HALF)]
 
-    # The last point on the wing arcs should be the basket point on the respective side
-    left_wing_arc += [(BASKET_X, FREE_THROW_LINE_WIDTH_HALF)]
-    right_wing_arc += [(BASKET_X, -FREE_THROW_LINE_WIDTH_HALF)]
+    # Add the first point on the wing arcs to close the polygon properly
+    left_wing_arc.append(left_wing_arc[0])
+    right_wing_arc.append(right_wing_arc[0])
 
     # Create the polygons for the left and right wing three sections
     LEFT_WING_THREE = Polygon(left_wing_arc)
