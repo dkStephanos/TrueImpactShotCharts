@@ -10,7 +10,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from shapely.geometry import Polygon
 from matplotlib.patches import Polygon as MplPolygon
 from code.io.TrackingProcessor import TrackingProcessor
-from code.util.FeatureUtil import ShotRegion
+from code.util.FeatureUtil import ShotRegionUtil
 
 class VisUtil:
     INTERVAL: int = 2
@@ -552,15 +552,15 @@ class VisUtil:
         VisUtil.set_halfcourt(ax)
 
         # Overlay shot regions
-        for region in ShotRegion:
+        for region in ShotRegionUtil:
             print(region)
-            if region == ShotRegion.BEYOND_HALFCOURT:
+            if region == ShotRegionUtil.BEYOND_HALFCOURT:
                 continue  # Optionally skip drawing the beyond halfcourt area
             patch = MplPolygon(list(region.polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=region.color, alpha=0.3, linewidth=1.5, linestyle='--')
             ax.add_patch(patch)
             # Label the region
             centroid = region.polygon.centroid
-            ax.text(centroid.x, centroid.y, region.value[0], color='black', ha='center', va='center', fontsize=10)
+            ax.text(centroid.x, centroid.y, region.description, color='black', ha='center', va='center', fontsize=10)
 
         ax.legend(loc='upper right')
         plt.show()

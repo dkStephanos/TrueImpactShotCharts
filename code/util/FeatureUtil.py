@@ -1,119 +1,71 @@
 import pandas as pd
 import numpy as np
-from enum import Enum
-from shapely.geometry import Polygon, Point, LineString
-from shapely.ops import unary_union
+from shapely.geometry import Point
 from shapely.affinity import scale
+from code.util.ShotRegionUtil import ShotRegionUtil
 
-class ShotRegion(Enum):
-    RESTRICTED_AREA = "Restricted Area"
-    LEFT_CORNER_THREE = "Left Corner Three"
-    RIGHT_CORNER_THREE = "Right Corner Three"
-    LEFT_WING_THREE = "Left Wing Three"
-    RIGHT_WING_THREE = "Right Wing Three"
-    LEFT_BASELINE_MID = "Left Baseline Mid-Range"
-    RIGHT_BASELINE_MID = "Right Baseline Mid-Range"
-    LEFT_ELBOW_MID = "Left Elbow Mid-Range"
-    RIGHT_ELBOW_MID = "Right Elbow Mid-Range"
-    CENTER_THREE = "Center Three"
-    BEYOND_HALFCOURT = "Beyond Half-court"
 
-    def __init__(self, description):
-        self.description = description
-
-    @property
-    def polygon(self):
-        arc_points = [(x, 22 - (0 if x < 22 else (x - 22) * 0.8819)) for x in np.linspace(0, 22, 100)]
-        arc = LineString(arc_points)
-        left_three_arc = unary_union([LineString([(-22, -3), (0, -3)]), scale(arc, xfact=-1, yfact=1)])
-        right_three_arc = unary_union([LineString([(22, -3), (0, -3)]), arc])
-
-        # Polygon definitions for each region
-        region_polygons = {
-            ShotRegion.RESTRICTED_AREA: Polygon([(-8, -19), (8, -19), (8, -25), (-8, -25)]),
-            ShotRegion.LEFT_CORNER_THREE: Polygon([(-47, -3), (-22, -3), (-22, -25), (-47, -25)]),
-            ShotRegion.RIGHT_CORNER_THREE: Polygon([(47, -3), (22, -3), (22, -25), (47, -25)]),
-            ShotRegion.LEFT_WING_THREE: left_three_arc.convex_hull,
-            ShotRegion.RIGHT_WING_THREE: right_three_arc.convex_hull,
-            ShotRegion.LEFT_BASELINE_MID: Polygon([(-47, 8), (-22, 8), (-22, -3), (-47, -3)]),
-            ShotRegion.RIGHT_BASELINE_MID: Polygon([(47, 8), (22, 8), (22, -3), (47, -3)]),
-            ShotRegion.LEFT_ELBOW_MID: Polygon([(-22, 19), (0, 19), (0, 8), (-22, 8)]),
-            ShotRegion.RIGHT_ELBOW_MID: Polygon([(22, 19), (0, 19), (0, 8), (22, 8)]),
-            ShotRegion.CENTER_THREE: Polygon([(0, 19), (-22, 19), (22, 19), (0, 22)]),
-            ShotRegion.BEYOND_HALFCOURT: Polygon([(0, -25), (0, 25), (47, 25), (47, -25)])
-        }
-
-        return region_polygons[self]
-
-    @property
-    def color(self):
-        region_colors = {
-            'RESTRICTED_AREA': 'red',
-            'LEFT_CORNER_THREE': 'blue',
-            'RIGHT_CORNER_THREE': 'blue',
-            'LEFT_WING_THREE': 'green',
-            'RIGHT_WING_THREE': 'green',
-            'LEFT_BASELINE_MID': 'purple',
-            'RIGHT_BASELINE_MID': 'purple',
-            'LEFT_ELBOW_MID': 'orange',
-            'RIGHT_ELBOW_MID': 'orange',
-            'CENTER_THREE': 'yellow',
-            'BEYOND_HALFCOURT': 'grey'
-        }
-        return region_colors[self.name]
-    
 class FeatureUtil:
     # Court location features
     # ----------------------------------------------------
-    def is_in_region(x, y, region: ShotRegion, basket_x):
+    def is_in_region(x, y, region: ShotRegionUtil, basket_x):
         """
         Generic method to determine if a position (x, y) is in the given shot region.
         Args:
         x (float): The x-coordinate of the position.
         y (float): The y-coordinate of the position.
-        region (ShotRegion): The region to check against.
+        region (ShotRegionUtil): The region to check against.
         basket_x (float): The x-coordinate of the basket, determines which half of the court to consider.
         Returns:
         bool: True if the position is in the specified region, otherwise False.
         """
         point = Point(x, y)
-        polygon = region.polygon
         if basket_x < 0:
-            polygon = scale(polygon, xfact=-1, origin=(0, 0))  # Flip for left side basket
-        return polygon.contains(point)
+            region = scale(
+                region, xfact=-1, origin=(0, 0)
+            )  # Flip for left side basket
+        return region.contains(point)
 
     def is_in_restricted_area(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.RESTRICTED_AREA, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RESTRICTED_AREA, basket_x)
 
     def is_in_left_corner_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_CORNER_THREE, basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.LEFT_CORNER_THREE, basket_x
+        )
 
     def is_in_right_corner_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_CORNER_THREE, basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.RIGHT_CORNER_THREE, basket_x
+        )
 
     def is_in_left_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_WING_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.LEFT_WING_THREE, basket_x)
 
     def is_in_right_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_WING_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RIGHT_WING_THREE, basket_x)
 
     def is_in_left_baseline_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_BASELINE_MID, basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.LEFT_BASELINE_MID, basket_x
+        )
 
     def is_in_right_baseline_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_BASELINE_MID, basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.RIGHT_BASELINE_MID, basket_x
+        )
 
     def is_in_left_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.LEFT_ELBOW_MID, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.LEFT_ELBOW_MID, basket_x)
 
     def is_in_right_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.RIGHT_ELBOW_MID, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RIGHT_ELBOW_MID, basket_x)
 
     def is_in_center_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.CENTER_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.CENTER_THREE, basket_x)
 
     def is_beyond_halfcourt(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegion.BEYOND_HALFCOURT, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.BEYOND_HALFCOURT, basket_x)
 
     def is_in_paint(x, y):
         """
@@ -275,8 +227,10 @@ class FeatureUtil:
         Returns:
         bool: True if the position is at the free throw line of the specified half of the court, otherwise False.
         """
-        FREE_THROW_LINE_DISTANCE = 19  # Distance from the baseline to the free throw line
-        
+        FREE_THROW_LINE_DISTANCE = (
+            19  # Distance from the baseline to the free throw line
+        )
+
         is_correct_half = (x > 0) if basket_x > 0 else (x < 0)
 
         return is_correct_half and -1 <= x <= 1 and y == -FREE_THROW_LINE_DISTANCE
@@ -295,7 +249,7 @@ class FeatureUtil:
         """
         COURT_WIDTH_HALF = 25  # Half the NBA court width
         SIDELINE_BUFFER = 3  # Define 'near' as within 3 feet of the sideline
-        
+
         return abs(y) >= (COURT_WIDTH_HALF - SIDELINE_BUFFER)
 
     def is_leading_offensive_player(df, off_team_id, basket_x):
@@ -426,7 +380,9 @@ class FeatureUtil:
         return None
 
     def find_ball_crossing_halfcourt(df, basket_x):
-        return FeatureUtil.find_ball_moment(df, FeatureUtil.is_beyond_halfcourt, basket_x)
+        return FeatureUtil.find_ball_moment(
+            df, FeatureUtil.is_beyond_halfcourt, basket_x
+        )
 
     def find_ball_crossing_far_three_point_line(df, basket_x):
         return FeatureUtil.find_ball_moment(
@@ -445,36 +401,36 @@ class FeatureUtil:
         basket_x (float): The x-coordinate of the basket.
 
         Returns:
-        ShotRegion: The region of the court where the shot was taken.
+        shot region desc: str
         """
         if FeatureUtil.is_beyond_halfcourt(x, y, basket_x):
-            return ShotRegion.BEYOND_HALFCOURT
-        
+            return "beyond halfcourt"
+
         if FeatureUtil.is_in_restricted_area(x, y, basket_x):
-            return ShotRegion.RESTRICTED_AREA
+            return "restricted area"
 
         if FeatureUtil.is_in_left_corner_three(x, y, basket_x):
-            return ShotRegion.LEFT_CORNER_THREE
+            return "left corner three"
         if FeatureUtil.is_in_right_corner_three(x, y, basket_x):
-            return ShotRegion.RIGHT_CORNER_THREE
-
+            return "right corner three"
+        
         if FeatureUtil.is_in_left_wing_three(x, y, basket_x):
-            return ShotRegion.LEFT_WING_THREE
+            return "left wing three"
         if FeatureUtil.is_in_right_wing_three(x, y, basket_x):
-            return ShotRegion.RIGHT_WING_THREE
+            return "right wing three"
 
         if FeatureUtil.is_in_center_three(x, y, basket_x):
-            return ShotRegion.CENTER_THREE
+            return "center three"
 
         if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
-            return ShotRegion.LEFT_BASELINE_MID
+            return "left baseline mid"
         if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
-            return ShotRegion.RIGHT_BASELINE_MID
+            return "right baseline mid"
 
         if FeatureUtil.is_in_left_elbow_mid(x, y, basket_x):
-            return ShotRegion.LEFT_ELBOW_MID
+            return "left elbow mid"
         if FeatureUtil.is_in_right_elbow_mid(x, y, basket_x):
-            return ShotRegion.RIGHT_ELBOW_MID
+            return "right elbow mid"
 
     def classify_shot_locations(shots_df, possession_df, classify_shot):
         """
@@ -495,22 +451,22 @@ class FeatureUtil:
 
         # Create a temporary key for merging to avoid large Cartesian products
         temp_possession_df = possession_df.copy()
-        temp_possession_df['key'] = 1
-        shots_df['key'] = 1
+        temp_possession_df["key"] = 1
+        shots_df["key"] = 1
 
         # Merge using a key then drop the key to clean up
-        merged_df = pd.merge(shots_df, temp_possession_df, on='key').drop('key', axis=1)
+        merged_df = pd.merge(shots_df, temp_possession_df, on="key").drop("key", axis=1)
 
         # Efficiently filter rows within time bounds
         valid_shots = merged_df[
-            (merged_df['shot_time'] >= merged_df['wcStart']) &
-            (merged_df['shot_time'] <= merged_df['wcEnd'])
+            (merged_df["shot_time"] >= merged_df["wcStart"])
+            & (merged_df["shot_time"] <= merged_df["wcEnd"])
         ].copy()  # Make a copy if you plan to modify this DataFrame to avoid SettingWithCopyWarning
 
         # Apply the classification function
-        valid_shots['shot_classification'] = valid_shots.apply(
-            lambda row: classify_shot(row['shot_x'], row['shot_y'], row['basket_x']),
-            axis=1
+        valid_shots["shot_classification"] = valid_shots.apply(
+            lambda row: classify_shot(row["shot_x"], row["shot_y"], row["basket_x"]),
+            axis=1,
         )
 
         return valid_shots

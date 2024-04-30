@@ -1,0 +1,120 @@
+import numpy as np
+from shapely.geometry import Point, Polygon
+
+# Constants for court dimensions
+BASKET_X = 41.75
+THREE_POINT_RADIUS = 23.75
+THREE_POINT_SIDELINE_DISTANCE = 14
+CORNER_THREE_DISTANCE = 22
+RESTRICTED_AREA_RADIUS = 4
+COURT_WIDTH_HALF = 25
+FREE_THROW_LINE_DISTANCE = 19
+ELBOW_DISTANCE_FROM_CENTER = 19
+
+# Generate the three-point arc segments
+ARC_START_ANGLE = -70  # Start angle for the three-point arc
+ARC_END_ANGLE = 70  # End angle for the three-point arc
+arc = [
+    Point(
+        BASKET_X + THREE_POINT_RADIUS * np.cos(np.radians(angle)),
+        THREE_POINT_RADIUS * np.sin(np.radians(angle)),
+    )
+    for angle in np.linspace(ARC_START_ANGLE, ARC_END_ANGLE, num=100)
+]
+left_arc = [
+    Point(p.x - 2 * BASKET_X, p.y) for p in arc
+]  # Mirror the arc to the left side
+
+class ShotRegionUtil:
+    # Create a point at the basket position
+    basket_center = Point(BASKET_X, 0)
+    
+    # Generate a circular buffer around the basket point for the restricted area
+    restricted_area_circle = basket_center.buffer(RESTRICTED_AREA_RADIUS)
+
+    # Create a Polygon from the exterior coordinates of the circle
+    RESTRICTED_AREA = Polygon(restricted_area_circle.exterior.coords)
+
+    LEFT_CORNER_THREE = Polygon(
+        [
+            (-BASKET_X, -COURT_WIDTH_HALF),
+            (-BASKET_X, CORNER_THREE_DISTANCE - COURT_WIDTH_HALF),
+            tuple(left_arc[0].coords[0]),
+            tuple(left_arc[-1].coords[0]),
+            (
+                -BASKET_X + THREE_POINT_SIDELINE_DISTANCE,
+                CORNER_THREE_DISTANCE - COURT_WIDTH_HALF,
+            ),
+            (-BASKET_X + THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+        ]
+    )
+    RIGHT_CORNER_THREE = Polygon(
+        [
+            (BASKET_X, -COURT_WIDTH_HALF),
+            (BASKET_X, CORNER_THREE_DISTANCE - COURT_WIDTH_HALF),
+            tuple(arc[0].coords[0]),
+            tuple(arc[-1].coords[0]),
+            (
+                BASKET_X - THREE_POINT_SIDELINE_DISTANCE,
+                CORNER_THREE_DISTANCE - COURT_WIDTH_HALF,
+            ),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+        ]
+    )
+    LEFT_WING_THREE = Polygon(
+        [
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+            tuple(left_arc[-1].coords[0]),
+            tuple(left_arc[0].coords[0]),
+        ]
+    )
+    RIGHT_WING_THREE = Polygon(
+        [
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+            tuple(arc[-1].coords[0]),
+            tuple(arc[0].coords[0]),
+        ]
+    )
+    LEFT_BASELINE_MID = Polygon(
+        [
+            (-BASKET_X, -COURT_WIDTH_HALF),
+            (-BASKET_X, -FREE_THROW_LINE_DISTANCE),
+            (-BASKET_X + THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (-BASKET_X + THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+        ]
+    )
+    RIGHT_BASELINE_MID = Polygon(
+        [
+            (BASKET_X, -COURT_WIDTH_HALF),
+            (BASKET_X, -FREE_THROW_LINE_DISTANCE),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -COURT_WIDTH_HALF),
+        ]
+    )
+    LEFT_ELBOW_MID = Polygon(
+        [
+            (-BASKET_X + THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (-BASKET_X + THREE_POINT_SIDELINE_DISTANCE, -ELBOW_DISTANCE_FROM_CENTER),
+            (-BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
+            (-BASKET_X, -FREE_THROW_LINE_DISTANCE),
+        ]
+    )
+    RIGHT_ELBOW_MID = Polygon(
+        [
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -FREE_THROW_LINE_DISTANCE),
+            (BASKET_X - THREE_POINT_SIDELINE_DISTANCE, -ELBOW_DISTANCE_FROM_CENTER),
+            (BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
+            (BASKET_X, -FREE_THROW_LINE_DISTANCE),
+        ]
+    )
+    CENTER_THREE = Polygon(arc)
+    BEYOND_HALFCOURT = Polygon(
+        [
+            (-BASKET_X, -COURT_WIDTH_HALF),
+            (-BASKET_X, COURT_WIDTH_HALF),
+            (BASKET_X, COURT_WIDTH_HALF),
+            (BASKET_X, -COURT_WIDTH_HALF),
+        ]
+    )
