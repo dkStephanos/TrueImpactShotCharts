@@ -82,9 +82,9 @@ def compute_regions():
 
     return {
         "CENTER_THREE": Polygon(
-            [(0, FREE_THROW_LINE_WIDTH_HALF)]
+            [(0, Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE)]
             + arc_coords
-            + [(0, -FREE_THROW_LINE_WIDTH_HALF)]
+            + [(0, Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE)]
         ),
         "LEFT_WING_THREE": Polygon(left_wing_arc),
         "RIGHT_WING_THREE": Polygon(right_wing_arc),
