@@ -27,45 +27,45 @@ class FeatureUtil:
         return region.contains(point)
 
     def is_in_restricted_area(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RESTRICTED_AREA, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RESTRICTED_AREA"], basket_x)
 
     def is_in_left_corner_three(x, y, basket_x):
         return FeatureUtil.is_in_region(
-            x, y, ShotRegionUtil.LEFT_CORNER_THREE, basket_x
+            x, y, ShotRegionUtil.regions["LEFT_CORNER_THREE"], basket_x
         )
 
     def is_in_right_corner_three(x, y, basket_x):
         return FeatureUtil.is_in_region(
-            x, y, ShotRegionUtil.RIGHT_CORNER_THREE, basket_x
+            x, y, ShotRegionUtil.regions["RIGHT_CORNER_THREE"], basket_x
         )
 
     def is_in_left_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.LEFT_WING_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["LEFT_WING_THREE"], basket_x)
 
     def is_in_right_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RIGHT_WING_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RIGHT_WING_THREE"], basket_x)
 
     def is_in_left_baseline_mid(x, y, basket_x):
         return FeatureUtil.is_in_region(
-            x, y, ShotRegionUtil.LEFT_BASELINE_MID, basket_x
+            x, y, ShotRegionUtil.regions["LEFT_BASELINE_MID"], basket_x
         )
 
     def is_in_right_baseline_mid(x, y, basket_x):
         return FeatureUtil.is_in_region(
-            x, y, ShotRegionUtil.RIGHT_BASELINE_MID, basket_x
+            x, y, ShotRegionUtil.regions["RIGHT_BASELINE_MID"], basket_x
         )
 
     def is_in_left_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.LEFT_ELBOW_MID, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["LEFT_ELBOW_MID"], basket_x)
 
     def is_in_right_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.RIGHT_ELBOW_MID, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RIGHT_ELBOW_MID"], basket_x)
 
     def is_in_center_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.CENTER_THREE, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CENTER_THREE"], basket_x)
 
     def is_beyond_halfcourt(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.BEYOND_HALFCOURT, basket_x)
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["BEYOND_HALFCOURT"], basket_x)
 
     def is_in_paint(x, y):
         """
@@ -404,33 +404,33 @@ class FeatureUtil:
         shot region desc: str
         """
         if FeatureUtil.is_beyond_halfcourt(x, y, basket_x):
-            return "beyond halfcourt"
+            return "BEYOND_HALFCOURT"
 
         if FeatureUtil.is_in_restricted_area(x, y, basket_x):
-            return "restricted area"
+            return "RESTRICTED_AREA"
 
         if FeatureUtil.is_in_left_corner_three(x, y, basket_x):
-            return "left corner three"
+            return "LEFT_CORNER_THREE"
         if FeatureUtil.is_in_right_corner_three(x, y, basket_x):
-            return "right corner three"
+            return "RIGHT_CORNER_THREE"
         
         if FeatureUtil.is_in_left_wing_three(x, y, basket_x):
-            return "left wing three"
+            return "LEFT_WING_THREE"
         if FeatureUtil.is_in_right_wing_three(x, y, basket_x):
-            return "right wing three"
+            return "RIGHT_WING_THREE"
 
         if FeatureUtil.is_in_center_three(x, y, basket_x):
-            return "center three"
+            return "CENTER_THREE"
 
         if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
-            return "left baseline mid"
+            return "LEFT_BASELINE_MID"
         if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
-            return "right baseline mid"
+            return "RIGHT_BASELINE_MID"
 
         if FeatureUtil.is_in_left_elbow_mid(x, y, basket_x):
-            return "left elbow mid"
+            return "LEFT_ELBOW_MID"
         if FeatureUtil.is_in_right_elbow_mid(x, y, basket_x):
-            return "right elbow mid"
+            return "RIGHT_ELBOW_MID"
 
     def classify_shot_locations(shots_df, possession_df, classify_shot):
         """

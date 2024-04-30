@@ -552,15 +552,14 @@ class VisUtil:
         VisUtil.set_halfcourt(ax)
 
         # Overlay shot regions
-        for region in ShotRegionUtil:
-            print(region)
-            if region == ShotRegionUtil.BEYOND_HALFCOURT:
+        for region, polygon in ShotRegionUtil.regions.items():
+            if region == "BEYOND_HALFCOURT":
                 continue  # Optionally skip drawing the beyond halfcourt area
-            patch = MplPolygon(list(region.polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=region.color, alpha=0.3, linewidth=1.5, linestyle='--')
+            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=ShotRegionUtil.region_colors[region], alpha=0.3, linewidth=1.5, linestyle='--')
             ax.add_patch(patch)
             # Label the region
-            centroid = region.polygon.centroid
-            ax.text(centroid.x, centroid.y, region.description, color='black', ha='center', va='center', fontsize=10)
+            centroid = polygon.centroid
+            ax.text(centroid.x, centroid.y, region, color='black', ha='center', va='center', fontsize=10)
 
         ax.legend(loc='upper right')
         plt.show()
