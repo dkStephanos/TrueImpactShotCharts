@@ -1,5 +1,5 @@
 import numpy as np
-from shapely.geometry import Point, Polygon, LineString
+from shapely.geometry import Polygon, Point
 
 # Constants for court dimensions
 BASKET_X = 41.75
@@ -18,35 +18,34 @@ X_MAX = 47
 Y_MIN = -25
 Y_MAX = 25
 
-
-class ShotRegionUtil:
-
-    # Calculate theta for the three-point arc segment
-    # Adjusted for half-court width minus distance to the sideline to form the arc start
+def compute_arc_coords():
+    # Calculate theta for the center three-point arc segment
     theta = np.arccos(
-        (THREE_POINT_RADIUS - (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE))
+        (
+            THREE_POINT_RADIUS
+            - (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE)
+        )
         / THREE_POINT_RADIUS
     )
 
-    # Generate points for the arc segment
+    # Generate points for the center three-point arc segment
     arc_coords = []
     for angle in np.linspace(theta, -theta, 360):
-        x = BASKET_X - THREE_POINT_RADIUS * np.cos(
-            angle
-        )  # Adjusted for the right basket
+        x = BASKET_X - THREE_POINT_RADIUS * np.cos(angle)
         y = THREE_POINT_RADIUS * np.sin(angle)
-        if (
-            -FREE_THROW_LINE_WIDTH_HALF <= y <= FREE_THROW_LINE_WIDTH_HALF
-        ):  # Filter points to be within the -8 to 8 y-range
+        if -FREE_THROW_LINE_WIDTH_HALF <= y <= FREE_THROW_LINE_WIDTH_HALF:
             arc_coords.append((x, y))
+    return arc_coords
 
-    # Angle at which the three-point line intersects the sidelines
+def compute_full_arc_coords():
+    # Calculate the angle at which the three-point line intersects the sidelines for the full arc
     theta_sideline = np.arctan(
-        (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE) / THREE_POINT_CURVE_START
+        (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE)
+        / THREE_POINT_CURVE_START
     )
 
-    # Generate points for the full arc segment
-    full_arc_coords = [
+    # Generate points for the full three-point arc
+    return [
         (
             BASKET_X - THREE_POINT_RADIUS * np.cos(angle),
             THREE_POINT_RADIUS * np.sin(angle),
@@ -54,39 +53,42 @@ class ShotRegionUtil:
         for angle in np.linspace(-theta_sideline, theta_sideline, 360)
     ]
 
-    # Filter out the center part to get only the wing sections of the arc
+def compute_regions():
+    arc_coords = compute_arc_coords()
+    full_arc_coords = compute_full_arc_coords()
+
+    # Define the wing arc sections by filtering out the center part
     wing_arc_coords = [
-        point for point in full_arc_coords if abs(point[1]) > FREE_THROW_LINE_WIDTH_HALF
+        point
+        for point in full_arc_coords
+        if abs(point[1]) > FREE_THROW_LINE_WIDTH_HALF
     ]
 
-    # Get the coordinates for the corners where the arc meets the sidelines
-    corner_left = (BASKET_X - THREE_POINT_CURVE_START, COURT_WIDTH_HALF)
-    corner_right = (BASKET_X - THREE_POINT_CURVE_START, -COURT_WIDTH_HALF)
+    left_wing_arc = [point for point in wing_arc_coords if point[1] > 0] + [
+        (0, COURT_WIDTH_HALF)
+    ]
+    right_wing_arc = [point for point in wing_arc_coords if point[1] < 0] + [
+        (0, -COURT_WIDTH_HALF)
+    ]
 
-    # Split the arc coordinates into left and right wings based on the y-coordinate
-    left_wing_arc = [point for point in wing_arc_coords if point[1] > 0]
-    right_wing_arc = [point for point in wing_arc_coords if point[1] < 0]
+    left_wing_arc.append(left_wing_arc[0])  # Close the polygon
+    right_wing_arc.append(right_wing_arc[0])  # Close the polygon
 
-    # Add the backcourt corners to the list of points for the wings
-    left_wing_arc += [(0, COURT_WIDTH_HALF)]
-    right_wing_arc += [(0, -COURT_WIDTH_HALF)]
-
-    # Add the first point on the wing arcs to close the polygon properly
-    left_wing_arc.append(left_wing_arc[0])
-    right_wing_arc.append(right_wing_arc[0])
-
-    # Create the polygons for the left and right wing three sections
-    LEFT_WING_THREE = Polygon(left_wing_arc)
-    RIGHT_WING_THREE = Polygon(right_wing_arc)
-
-    # Create the restricted area polygon
     restricted_area = (
         Point(BASKET_X, 0)
         .buffer(RESTRICTED_AREA_RADIUS)
         .difference(Point(BASKET_X, 0).buffer(RESTRICTED_AREA_RADIUS).boundary)
     )
 
-    regions = {
+    return {
+        "CENTER_THREE": Polygon(
+            [(0, FREE_THROW_LINE_WIDTH_HALF)]
+            + arc_coords
+            + [(0, -FREE_THROW_LINE_WIDTH_HALF)]
+        ),
+        "LEFT_WING_THREE": Polygon(left_wing_arc),
+        "RIGHT_WING_THREE": Polygon(right_wing_arc),
+        "RESTRICTED_AREA": restricted_area,
         "RIGHT_CORNER_THREE": Polygon(
             [
                 (
@@ -129,8 +131,6 @@ class ShotRegionUtil:
                 (-X_MAX, Y_MIN),
             ]
         ),
-        "RESTRICTED_AREA": restricted_area,
-        "RIGHT_WING_THREE": RIGHT_WING_THREE,
         "RIGHT_BASELINE_MID": Polygon(
             [
                 (BASKET_X, -THREE_POINT_CURVE_START),
@@ -147,7 +147,6 @@ class ShotRegionUtil:
                 (BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
             ]
         ),
-        "LEFT_WING_THREE": LEFT_WING_THREE,
         "LEFT_BASELINE_MID": Polygon(
             [
                 (BASKET_X, Y_MAX),
@@ -164,15 +163,9 @@ class ShotRegionUtil:
                 (BASKET_X, THREE_POINT_CURVE_START),
             ]
         ),
-        "CENTER_THREE": Polygon(
-            [
-                (0, FREE_THROW_LINE_WIDTH_HALF),  # Top left corner (center court)
-                *arc_coords,  # Arc from top to bottom
-                (0, -FREE_THROW_LINE_WIDTH_HALF),  # Bottom left corner (center court)
-            ]
-        ),
     }
 
+class ShotRegionUtil:
     region_colors = {
         "RESTRICTED_AREA": "#FF0000",  # Red
         "LEFT_CORNER_THREE": "#00FF00",  # Green
@@ -187,10 +180,4 @@ class ShotRegionUtil:
         "BEYOND_HALFCOURT": "#8B4513",  # SaddleBrown
     }
 
-    @classmethod
-    def get_region(cls, region_name):
-        return cls.regions.get(region_name)
-
-    @classmethod
-    def list_regions(cls):
-        return cls.regions.keys()
+    regions = compute_regions()
