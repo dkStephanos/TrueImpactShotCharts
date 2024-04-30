@@ -64,15 +64,25 @@ def compute_regions():
         if abs(point[1]) > FREE_THROW_LINE_WIDTH_HALF
     ]
 
-    left_wing_arc = [point for point in wing_arc_coords if point[1] > 0] + [
-        (0, COURT_WIDTH_HALF)
-    ]
-    right_wing_arc = [point for point in wing_arc_coords if point[1] < 0] + [
-        (0, -COURT_WIDTH_HALF)
+    # Constructing the left wing arc, adding points from top to bottom, ensuring to include the sideline intersection
+    left_wing_arc = [
+        (0, Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE)  # Starting at the top sideline intersection
+    ] + [point for point in wing_arc_coords if point[1] > 0] + [  # Include arc points for the left wing
+        (0, COURT_WIDTH_HALF)  # Endpoint at the sideline at half-court width
     ]
 
-    left_wing_arc.append(left_wing_arc[0])  # Close the polygon
-    right_wing_arc.append(right_wing_arc[0])  # Close the polygon
+    # Ensure the left wing polygon is closed by connecting the last point back to the first
+    left_wing_arc.append(left_wing_arc[0])  # Close the polygon by returning to the starting point
+
+    # Constructing the right wing arc, organizing points correctly and reversing the order to avoid twists
+    right_wing_arc = [
+        (0, Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE)  # Start at the lower sideline intersection
+    ] + list(reversed([point for point in wing_arc_coords if point[1] < 0])) + [  # Reverse the arc points for logical order
+        (0, -COURT_WIDTH_HALF)  # Endpoint at the sideline at half-court width (negative)
+    ]
+
+    # Ensure the right wing polygon is closed by connecting the last point back to the first
+    right_wing_arc.append(right_wing_arc[0])  # Close the polygon by returning to the starting point
 
     restricted_area = (
         Point(BASKET_X, 0)
