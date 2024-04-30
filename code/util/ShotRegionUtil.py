@@ -1,5 +1,5 @@
 import numpy as np
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
 
 # Constants for court dimensions
 BASKET_X = 41.75
@@ -11,23 +11,31 @@ RESTRICTED_AREA_RADIUS = 4
 COURT_LENGTH = 94
 COURT_WIDTH_HALF = 25
 FREE_THROW_LINE_DISTANCE = 19
+FREE_THROW_LINE_WIDTH_HALF = 8  # Half the width of the free throw line
 ELBOW_DISTANCE_FROM_CENTER = 19
 X_MIN = 0
 X_MAX = 47
 Y_MIN = -25
 Y_MAX = 25
 
-# Generate the three-point arc segments
-arc = [
-    Point(
-        BASKET_X + THREE_POINT_RADIUS * np.cos(np.radians(angle)),
-        THREE_POINT_RADIUS * np.sin(np.radians(angle))
-    )
-    for angle in np.linspace(-70, 70, num=100)
-]
+# Calculate theta for the three-point arc segment
+# Adjusted for half-court width minus distance to the sideline to form the arc start
+theta = np.arccos((THREE_POINT_RADIUS - (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE)) / THREE_POINT_RADIUS)
 
-# Generate the three-point arc for the right half-court
-right_arc = [p for p in arc if p.x >= BASKET_X]
+# Generate points for the arc segment
+arc_coords = []
+for angle in np.linspace(theta, -theta, 360):
+    x = BASKET_X - THREE_POINT_RADIUS * np.cos(angle)  # Adjusted for the right basket
+    y = THREE_POINT_RADIUS * np.sin(angle)
+    if -FREE_THROW_LINE_WIDTH_HALF <= y <= FREE_THROW_LINE_WIDTH_HALF:  # Filter points to be within the -8 to 8 y-range
+        arc_coords.append((x, y))
+
+# Create the "CENTER_THREE" polygon
+CENTER_THREE = Polygon([
+    (0, FREE_THROW_LINE_WIDTH_HALF),  # Top left corner (center court)
+    *arc_coords,                      # Arc from top to bottom
+    (0, -FREE_THROW_LINE_WIDTH_HALF)  # Bottom left corner (center court)
+])
 
 # Create the restricted area polygon
 restricted_area = Point(BASKET_X, 0).buffer(RESTRICTED_AREA_RADIUS).difference(Point(BASKET_X, 0).buffer(RESTRICTED_AREA_RADIUS).boundary)
@@ -56,8 +64,8 @@ class ShotRegionUtil:
         
         'RESTRICTED_AREA': restricted_area,
         'RIGHT_WING_THREE': Polygon([
-            tuple(right_arc[0].coords[0]),
-            tuple(right_arc[-1].coords[0]),
+            (0,0),
+            (0,0),
             (BASKET_X, -THREE_POINT_CURVE_START),
         ]),
         'RIGHT_BASELINE_MID': Polygon([
@@ -73,7 +81,7 @@ class ShotRegionUtil:
             (BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
         ]),
         'LEFT_WING_THREE': Polygon([
-            tuple(right_arc[-1].coords[0]),
+            (0,0),
             (BASKET_X, THREE_POINT_CURVE_START),
             (BASKET_X, Y_MAX),
         ]),
@@ -89,12 +97,8 @@ class ShotRegionUtil:
             (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
             (BASKET_X, THREE_POINT_CURVE_START),
         ]),
-        'CENTER_THREE': Polygon([
-            tuple(right_arc[-1].coords[0]),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
-            (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
-            tuple(right_arc[0].coords[0]),
-        ]),
+        
+        'CENTER_THREE': CENTER_THREE
     }
 
     region_colors = {
