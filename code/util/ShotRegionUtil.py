@@ -14,6 +14,7 @@ COURT_WIDTH_HALF = 25
 FREE_THROW_LINE_DISTANCE = 19
 FREE_THROW_LINE_WIDTH_HALF = 8  # Half the width of the free throw line
 ELBOW_DISTANCE_FROM_CENTER = 19
+SIDELINE_INBOUNDS_TICK = 28
 X_MIN = 0
 X_MAX = 47
 Y_MIN = -25
@@ -231,40 +232,30 @@ def compute_midrange_quadrants(mid_range_region):
     if len(split_result.geoms) != 2:
         raise ValueError("Expected exactly two geometries from the split but got {}".format(len(split_result.geoms)))
     
-    upper_half = split_result.geoms[0]
-    lower_half = split_result.geoms[1]
-
-    # Calculate midpoints for angled splits
-    upper_midpoint_y = (upper_half.bounds[3] + upper_half.bounds[1]) / 2
-    lower_midpoint_y = (lower_half.bounds[3] + lower_half.bounds[1]) / 2
+    lower_half = split_result.geoms[0]
+    upper_half = split_result.geoms[1]
 
     # Define extended angled lines passing through the basket and the midpoints
     upper_angled_line = LineString([
-        (BASKET_X, upper_midpoint_y), 
-        (X_MIN - 100, upper_midpoint_y - (BASKET_X - (X_MIN - 100))),  # Extend beyond the geometry
-        (X_MAX + 100, upper_midpoint_y + ((X_MAX + 100) - BASKET_X))   # Extend beyond the geometry
+        (BASKET_X, 0), 
+        (X_MAX - SIDELINE_INBOUNDS_TICK, Y_MAX),
     ])
     lower_angled_line = LineString([
-        (BASKET_X, lower_midpoint_y), 
-        (X_MIN - 100, lower_midpoint_y - (BASKET_X - (X_MIN - 100))),  # Extend beyond the geometry
-        (X_MAX + 100, lower_midpoint_y + ((X_MAX + 100) - BASKET_X))   # Extend beyond the geometry
+        (BASKET_X, 0), 
+        (X_MAX - SIDELINE_INBOUNDS_TICK, Y_MIN),
     ])
 
     # Split each half by its angled line
     upper_split = split(upper_half, upper_angled_line)
     lower_split = split(lower_half, lower_angled_line)
 
-    # if len(upper_split.geoms) != 2 or len(lower_split.geoms) != 2:
-    #     print("Upper split count:", len(upper_split.geoms), "Lower split count:", len(lower_split.geoms))
-    #     raise ValueError("Split did not result in two geometries as expected")
-
     # Unpack the geometries correctly
     upper_left = upper_split.geoms[0]
     upper_right = upper_split.geoms[1]
-    # lower_left = lower_split.geoms[0]
-    # lower_right = lower_split.geoms[1]
+    lower_left = lower_split.geoms[0]
+    lower_right = lower_split.geoms[1]
 
-    return upper_left, upper_right#, lower_left, lower_right
+    return upper_left, upper_right, lower_left, lower_right
 
 
 def compute_regions():
@@ -276,12 +267,12 @@ def compute_regions():
     left_corner, right_corner = compute_corner_three_regions()
     mid_range_region = compute_mid_range_region(three_point_arc, close_range_arc)
 
-    upper_left, upper_right = compute_midrange_quadrants(mid_range_region)
+    upper_left, upper_right, lower_left, lower_right = compute_midrange_quadrants(mid_range_region)
     return {
         "midrange_top_left": upper_left,
         "midrange_top_right": upper_right,
-        # "midrange_lower_left": lower_left,
-        # "midrange_lower_right": lower_right,
+        "midrange_lower_left": lower_left,
+        "midrange_lower_right": lower_right,
         "CENTER_THREE": Polygon(center_wing_arc),
         "LEFT_WING_THREE": Polygon(left_wing_arc),
         "RIGHT_WING_THREE": Polygon(right_wing_arc),
