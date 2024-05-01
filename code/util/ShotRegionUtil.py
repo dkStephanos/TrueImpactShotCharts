@@ -123,13 +123,16 @@ def compute_close_range_arc():
         )  # Generate left half-circle from 90 to 270 degrees
     ]
 
-    # Add points to connect the semicircle to the out-of-bounds line
-    arc += [(45, -11), (47, -11), (47, 11)]
-
-    # Complete the arc by connecting back to the start
-    arc.append(
-        (45, 11)
-    )  # Closing the shape by connecting to the start of the semicircle
+    # Add points to connect the semicircle to the out-of-bounds line precisely
+    arc += [
+        (
+            45,
+            -11,
+        ),  # Lower left point at the baseline, matching expected end of mid-range
+        (47, -11),  # Rightmost lower point at the baseline
+        (47, 11),  # Rightmost upper point at the baseline
+        (45, 11),  # Upper left point, back to start, completing the semicircle
+    ]
 
     return arc
 
@@ -169,44 +172,51 @@ def compute_corner_three_regions():
 
     return left_corner, right_corner
 
+
 def compute_full_three_point_area(three_point_arc):
-    # Assuming the three_point_arc provided is just the curved part of the arc
-    # Extend this arc to include the lines down to the baseline
-    # Points need to connect with the court corners at the baseline
+    # Assuming three_point_arc includes the whole arc from one side to the other
+    # Add points to close the polygon correctly around the three-point line
     extended_arc = three_point_arc + [
-        (X_MAX, -COURT_WIDTH_HALF + CORNER_THREE_DISTANCE_TO_SIDELINE),  # Right corner
-        (X_MAX, -COURT_WIDTH_HALF),  # Right baseline
-        (X_MIN, -COURT_WIDTH_HALF),  # Left baseline
-        (X_MIN, COURT_WIDTH_HALF),  # Left baseline top
-        (X_MAX, COURT_WIDTH_HALF),  # Right baseline top
-        (X_MAX, COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE)  # Left corner
-    ] + [three_point_arc[0]]  # Close the polygon by connecting back to the start
+        (
+            X_MAX - THREE_POINT_CURVE_START,
+            COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE,
+        ),
+        (
+            X_MAX,
+            COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE,
+        ),  # Right sideline top
+        (
+            X_MAX,
+            -COURT_WIDTH_HALF + CORNER_THREE_DISTANCE_TO_SIDELINE,
+        ),  # Right sideline bottom
+        (
+            X_MAX - THREE_POINT_CURVE_START,
+            -COURT_WIDTH_HALF + CORNER_THREE_DISTANCE_TO_SIDELINE,
+        ),
+        three_point_arc[0],  # Close the polygon by connecting back to the start
+    ]
 
-    # Create the polygon
-    three_point_polygon = Polygon(extended_arc)
-
-    return three_point_polygon
+    return Polygon(extended_arc)
 
 
 def compute_mid_range_region(three_point_arc, close_range_arc):
-    # Ensure arcs are closed and valid as polygons
-    close_range_line = LineString(close_range_arc)
-
-    # Convert lines to polygons and check validity
     three_point_poly = compute_full_three_point_area(three_point_arc)
-    close_range_poly = Polygon(close_range_line)
+    close_range_poly = Polygon(close_range_arc)
+
+    # Validate and correct geometries
     if not three_point_poly.is_valid:
-        three_point_poly = three_point_poly.buffer(0)
+        three_point_poly = three_point_poly.buffer(0)  # Correct minor geometric issues
     if not close_range_poly.is_valid:
         close_range_poly = close_range_poly.buffer(0)
 
-    # Compute the basic mid-range area
+    # Calculate the mid-range area
     mid_range_region = three_point_poly.difference(close_range_poly)
 
-    # Handle GeometryCollection
+    # Handle possible GeometryCollection results
     if isinstance(mid_range_region, GeometryCollection):
-        # Filter only polygons from the collection
-        mid_range_region = [geom for geom in mid_range_region.geoms if isinstance(geom, Polygon)]
+        mid_range_region = [
+            geom for geom in mid_range_region.geoms if isinstance(geom, Polygon)
+        ]
 
     return mid_range_region
 
