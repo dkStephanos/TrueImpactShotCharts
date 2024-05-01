@@ -26,8 +26,8 @@ class FeatureUtil:
             )  # Flip for left side basket
         return region.contains(point)
 
-    def is_in_restricted_area(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RESTRICTED_AREA"], basket_x)
+    def is_in_close_range(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CLOSE_RANGE"], basket_x)
 
     def is_in_left_corner_three(x, y, basket_x):
         return FeatureUtil.is_in_region(
@@ -406,8 +406,8 @@ class FeatureUtil:
         if FeatureUtil.is_beyond_halfcourt(x, y, basket_x):
             return "BEYOND_HALFCOURT"
 
-        if FeatureUtil.is_in_restricted_area(x, y, basket_x):
-            return "RESTRICTED_AREA"
+        if FeatureUtil.is_in_close_range(x, y, basket_x):
+            return "CLOSE_RANGE"
 
         if FeatureUtil.is_in_left_corner_three(x, y, basket_x):
             return "LEFT_CORNER_THREE"

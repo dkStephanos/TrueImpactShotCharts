@@ -70,17 +70,31 @@ def compute_wing_arcs(full_arc_coords):
 
     return left_wing_arc, right_wing_arc
 
+def compute_close_range_arc():
+    # Define the center and radius
+    center_point = Point(45, 0)
+    radius = 11  # Adjusted radius to match the desired coverage
+
+    # Generate points for the left half-circle
+    arc = [
+        (center_point.x + radius * np.cos(angle), center_point.y + radius * np.sin(angle))
+        for angle in np.linspace(np.pi / 2, 3 * np.pi / 2, 180)  # Generate left half-circle from 90 to 270 degrees
+    ]
+
+    # Add points to connect the semicircle to the out-of-bounds line
+    # This rectangle will run from (45, 11) to (47, 11) and back down to (47, -11) and (45, -11)
+    arc += [(45, -11), (47, -11), (47, 11)]
+
+    # Complete the arc by connecting back to the start
+    arc.append((45, 11))  # Closing the shape by connecting to the start of the semicircle
+
+    return arc
     
 def compute_regions():
     full_arc_coords = compute_full_arc_coords()
     center_wing_arc = compute_center_arc(full_arc_coords)
     left_wing_arc, right_wing_arc = compute_wing_arcs(full_arc_coords)
-
-    restricted_area = (
-        Point(BASKET_X, 0)
-        .buffer(RESTRICTED_AREA_RADIUS)
-        .difference(Point(BASKET_X, 0).buffer(RESTRICTED_AREA_RADIUS).boundary)
-    )
+    close_range_arc = compute_close_range_arc()
 
     return {
         "CENTER_THREE": Polygon(
@@ -90,7 +104,7 @@ def compute_regions():
         ),
         "LEFT_WING_THREE": Polygon(left_wing_arc),
         "RIGHT_WING_THREE": Polygon(right_wing_arc),
-        "RESTRICTED_AREA": restricted_area,
+        "CLOSE_RANGE": Polygon(close_range_arc),
         "RIGHT_CORNER_THREE": Polygon(
             [
                 (
@@ -169,7 +183,7 @@ def compute_regions():
 
 class ShotRegionUtil:
     region_colors = {
-        "RESTRICTED_AREA": "#FF0000",  # Red
+        "CLOSE_RANGE": "#FF0000",  # Red
         "LEFT_CORNER_THREE": "#00FF00",  # Green
         "RIGHT_CORNER_THREE": "#0000FF",  # Blue
         "LEFT_WING_THREE": "#FFFF00",  # Yellow
