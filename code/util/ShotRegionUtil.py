@@ -269,10 +269,10 @@ def compute_regions():
 
     upper_left, upper_right, lower_left, lower_right = compute_midrange_quadrants(mid_range_region)
     return {
-        "midrange_top_left": upper_left,
-        "midrange_top_right": upper_right,
-        "midrange_lower_left": lower_left,
-        "midrange_lower_right": lower_right,
+        "LEFT_BASELINE_MID": upper_left,
+        "LEFT_ELBOW_MID": upper_right,
+        "RIGHT_ELBOW_MID": lower_left,
+        "RIGHT_BASELINE_MID": lower_right,
         "CENTER_THREE": Polygon(center_wing_arc),
         "LEFT_WING_THREE": Polygon(left_wing_arc),
         "RIGHT_WING_THREE": Polygon(right_wing_arc),
@@ -285,38 +285,6 @@ def compute_regions():
                 (X_MIN, Y_MAX),
                 (-X_MAX, Y_MAX),
                 (-X_MAX, Y_MIN),
-            ]
-        ),
-        "RIGHT_BASELINE_MID": Polygon(
-            [
-                (BASKET_X, -THREE_POINT_CURVE_START),
-                (BASKET_X, Y_MIN),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, Y_MIN),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
-            ]
-        ),
-        "RIGHT_ELBOW_MID": Polygon(
-            [
-                (BASKET_X, -THREE_POINT_CURVE_START),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, -THREE_POINT_CURVE_START),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, -ELBOW_DISTANCE_FROM_CENTER),
-                (BASKET_X, -ELBOW_DISTANCE_FROM_CENTER),
-            ]
-        ),
-        "LEFT_BASELINE_MID": Polygon(
-            [
-                (BASKET_X, Y_MAX),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, Y_MAX),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
-                (BASKET_X, THREE_POINT_CURVE_START),
-            ]
-        ),
-        "LEFT_ELBOW_MID": Polygon(
-            [
-                (BASKET_X, ELBOW_DISTANCE_FROM_CENTER),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, ELBOW_DISTANCE_FROM_CENTER),
-                (BASKET_X - FREE_THROW_LINE_DISTANCE, THREE_POINT_CURVE_START),
-                (BASKET_X, THREE_POINT_CURVE_START),
             ]
         ),
     }
