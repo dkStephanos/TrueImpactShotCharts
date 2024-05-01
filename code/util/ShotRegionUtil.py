@@ -1,5 +1,5 @@
 import numpy as np
-from shapely.geometry import Polygon, Point, LineString, GeometryCollection, box
+from shapely.geometry import Polygon, Point, LineString, GeometryCollection
 from shapely.ops import split
 
 # Constants for court dimensions
@@ -291,6 +291,8 @@ def compute_regions():
 
 
 class ShotRegionUtil:
+    # Definition of colors and other properties remain the same.
+    
     region_colors = {
         "CLOSE_RANGE": "#FF0000",  # Red
         "LEFT_CORNER_THREE": "#00FF00",  # Green
@@ -305,4 +307,23 @@ class ShotRegionUtil:
         "BEYOND_HALFCOURT": "#8B4513",  # SaddleBrown
     }
 
-    regions = compute_regions()
+    _regions = None  # Private class-level attribute to store the regions once computed.
+
+    @classmethod
+    def compute_regions(cls):
+        if cls._regions is None:
+            # Compute the regions only once.
+            cls._regions = cls._compute_regions_internal()
+        return cls._regions
+
+    @classmethod
+    def _compute_regions_internal(cls):
+        # This internal method computes the regions.
+        # This method should contain all the computation logic that was previously directly in compute_regions().
+        # Return the dictionary of regions here.
+        return compute_regions()
+
+    @classmethod
+    @property
+    def regions(cls):
+        return cls.compute_regions()
