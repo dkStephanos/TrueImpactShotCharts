@@ -1,5 +1,6 @@
 import numpy as np
-from shapely.geometry import Polygon, Point, LineString, box, GeometryCollection
+from shapely.geometry import Polygon, Point, LineString, GeometryCollection
+from shapely.ops import split, unary_union
 
 # Constants for court dimensions
 BASKET_X = 41.75
@@ -221,6 +222,27 @@ def compute_mid_range_region(three_point_arc, close_range_arc):
     return mid_range_region
 
 
+def compute_midrange_quadrants(mid_range_region):
+    # First, perform a horizontal split at FREE_THROW_LINE_DISTANCE
+    horizontal_line = LineString([(X_MIN, FREE_THROW_LINE_DISTANCE), (X_MAX, FREE_THROW_LINE_DISTANCE)])
+    top_half, bottom_half = split(mid_range_region, horizontal_line)
+
+    # Determine the arc center y coordinate based on the mid-range region's arc geometry
+    # Assuming the arc is symmetrical and centered horizontally at BASKET_X
+    arc_center_y = (top_half.bounds[3] + bottom_half.bounds[1]) / 2  # Average of top of bottom_half and bottom of top_half
+
+    # Define angled lines through basket for top and bottom halves
+    angle_top = LineString([(BASKET_X, arc_center_y), (X_MIN, FREE_THROW_LINE_DISTANCE), (X_MAX, FREE_THROW_LINE_DISTANCE)])
+    angle_bottom = LineString([(BASKET_X, arc_center_y), (X_MIN, FREE_THROW_LINE_DISTANCE), (X_MAX, FREE_THROW_LINE_DISTANCE)])
+
+    # Split each half by the angled line
+    # Use unary_union to combine top and bottom half for splitting to maintain a single geometry collection
+    combined_geometry = unary_union([top_half, bottom_half])
+    quadrants = split(combined_geometry, angle_top)
+
+    return quadrants  # This may need further indexing depending on exact output
+
+
 def compute_regions():
     three_point_arc = compute_three_point_arc()
     center_wing_arc = compute_center_arc(three_point_arc)
@@ -230,6 +252,7 @@ def compute_regions():
     left_corner, right_corner = compute_corner_three_regions()
     mid_range_region = compute_mid_range_region(three_point_arc, close_range_arc)
 
+    quadrants = compute_midrange_quadrants(mid_range_region)
     return {
         "midrange": mid_range_region,
         "CENTER_THREE": Polygon(center_wing_arc),
