@@ -18,25 +18,6 @@ X_MAX = 47
 Y_MIN = -25
 Y_MAX = 25
 
-def compute_arc_coords():
-    # Calculate theta for the center three-point arc segment
-    theta = np.arccos(
-        (
-            THREE_POINT_RADIUS
-            - (COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE)
-        )
-        / THREE_POINT_RADIUS
-    )
-
-    # Generate points for the center three-point arc segment
-    arc_coords = []
-    for angle in np.linspace(theta, -theta, 360):
-        x = BASKET_X - THREE_POINT_RADIUS * np.cos(angle)
-        y = THREE_POINT_RADIUS * np.sin(angle)
-        if -FREE_THROW_LINE_WIDTH_HALF <= y <= FREE_THROW_LINE_WIDTH_HALF:
-            arc_coords.append((x, y))
-    return arc_coords
-
 def compute_full_arc_coords():
     # Calculate the angle where the three-point arc needs to intersect the sideline.
     # The hypotenuse in this case is directly the three-point radius.
@@ -53,6 +34,14 @@ def compute_full_arc_coords():
         )
         for angle in np.linspace(-theta_sideline, theta_sideline, 360)
     ]
+    
+def compute_center_arc(full_arc_coords):
+    # Filter the full arc coordinates to narrow down to the center three-point arc segment
+    center_arc_coords = [
+        (x, y) for (x, y) in full_arc_coords
+        if -FREE_THROW_LINE_WIDTH_HALF <= y <= FREE_THROW_LINE_WIDTH_HALF
+    ]
+    return center_arc_coords
     
 def compute_wing_arcs(full_arc_coords):
     # Define the wing arc sections by filtering out the center part
@@ -83,8 +72,8 @@ def compute_wing_arcs(full_arc_coords):
 
     
 def compute_regions():
-    arc_coords = compute_arc_coords()
     full_arc_coords = compute_full_arc_coords()
+    center_wing_arc = compute_center_arc(full_arc_coords)
     left_wing_arc, right_wing_arc = compute_wing_arcs(full_arc_coords)
 
     restricted_area = (
@@ -95,9 +84,9 @@ def compute_regions():
 
     return {
         "CENTER_THREE": Polygon(
-            [(0, Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE)]
-            + arc_coords
-            + [(0, Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE)]
+            [(0, Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE)]
+            + center_wing_arc
+            + [(0, Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE)]
         ),
         "LEFT_WING_THREE": Polygon(left_wing_arc),
         "RIGHT_WING_THREE": Polygon(right_wing_arc),
