@@ -36,6 +36,9 @@ class FeatureUtil:
         return FeatureUtil.is_in_region(
             x, y, ShotRegionUtil.regions["RIGHT_CORNER_THREE"], basket_x
         )
+        
+    def is_in_center_three(x, y, basket_x):
+        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CENTER_THREE"], basket_x)
 
     def is_in_left_wing_three(x, y, basket_x):
         return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["LEFT_WING_THREE"], basket_x)
@@ -58,9 +61,6 @@ class FeatureUtil:
 
     def is_in_right_elbow_mid(x, y, basket_x):
         return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RIGHT_ELBOW_MID"], basket_x)
-
-    def is_in_center_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CENTER_THREE"], basket_x)
 
     def is_beyond_halfcourt(x, y, basket_x):
         return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["BEYOND_HALFCOURT"], basket_x)
