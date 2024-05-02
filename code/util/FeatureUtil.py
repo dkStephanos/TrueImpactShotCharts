@@ -21,10 +21,9 @@ class FeatureUtil:
         """
         point = Point(x, y)
         if basket_x < 0:
-            region = scale(
-                region, xfact=-1, origin=(0, 0)
-            )  # Flip for left side basket
-        return region.contains(point)
+            region = scale(region, xfact=-1, origin=(0, 0))  # Flip for left side basket
+        # Use intersects instead of contains to include boundary points
+        return region.intersects(point)
 
     def is_in_close_range(x, y, basket_x):
         return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CLOSE_RANGE"], basket_x)
@@ -394,6 +393,7 @@ class FeatureUtil:
     def classify_shot_region(x, y, basket_x):
         """
         Classify a shot based on its location on the court using detailed categories.
+        NOTE: Due to shots that fall on boundary borders, order here is important. Check midrange first!
 
         Args:
         x (float): The x-coordinate of the shot.
@@ -408,6 +408,16 @@ class FeatureUtil:
 
         if FeatureUtil.is_in_close_range(x, y, basket_x):
             return "CLOSE_RANGE"
+        
+        if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
+            return "LEFT_BASELINE_MID"
+        if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
+            return "RIGHT_BASELINE_MID"
+
+        if FeatureUtil.is_in_left_elbow_mid(x, y, basket_x):
+            return "LEFT_ELBOW_MID"
+        if FeatureUtil.is_in_right_elbow_mid(x, y, basket_x):
+            return "RIGHT_ELBOW_MID"
 
         if FeatureUtil.is_in_left_corner_three(x, y, basket_x):
             return "LEFT_CORNER_THREE"
@@ -421,16 +431,6 @@ class FeatureUtil:
 
         if FeatureUtil.is_in_center_three(x, y, basket_x):
             return "CENTER_THREE"
-
-        if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
-            return "LEFT_BASELINE_MID"
-        if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
-            return "RIGHT_BASELINE_MID"
-
-        if FeatureUtil.is_in_left_elbow_mid(x, y, basket_x):
-            return "LEFT_ELBOW_MID"
-        if FeatureUtil.is_in_right_elbow_mid(x, y, basket_x):
-            return "RIGHT_ELBOW_MID"
 
     def classify_shot_locations(shots_df, possession_df, classify_shot):
         """
