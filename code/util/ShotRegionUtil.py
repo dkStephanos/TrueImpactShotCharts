@@ -281,10 +281,10 @@ def compute_regions():
         "LEFT_CORNER_THREE": Polygon(left_corner),
         "BEYOND_HALFCOURT": Polygon(
             [
-                (X_MIN, Y_MIN),
-                (X_MIN, Y_MAX),
-                (-X_MAX, Y_MAX),
                 (-X_MAX, Y_MIN),
+                (-X_MAX, Y_MAX),
+                (X_MIN, Y_MAX),
+                (X_MIN, Y_MIN),
             ]
         ),
     }
