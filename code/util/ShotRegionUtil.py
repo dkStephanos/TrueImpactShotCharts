@@ -22,22 +22,28 @@ Y_MAX = 25
 
 
 def compute_three_point_arc():
-    # Calculate the angle where the three-point arc needs to intersect the sideline.
-    # The hypotenuse in this case is directly the three-point radius.
-    delta_x = (
-        COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE
-    )  # Horizontal distance from the sideline inside the arc
+    # Constants for the three-point arc
+    COURT_WIDTH_HALF = 25  # Half the court width, assuming standard NBA dimensions
+    CORNER_THREE_DISTANCE_TO_SIDELINE = 3  # Distance from the sideline to the start of the three-point curve
+    THREE_POINT_RADIUS = 23.75  # Radius of the three-point arc
+    BASKET_X = 41.75  # x-coordinate of the basket
 
-    # Calculate the angle at which the three-point line intersects the sidelines using the correct triangle dimensions
+    # Calculate the horizontal distance from the sideline inside the arc
+    delta_x = COURT_WIDTH_HALF - CORNER_THREE_DISTANCE_TO_SIDELINE
+
+    # Calculate the angle at which the three-point line intersects the sidelines
     theta_sideline = np.arcsin(delta_x / THREE_POINT_RADIUS)
 
-    # Generate points for the full three-point arc
+    # Adjust the angle based on the radius to approximate a 0.2 unit extension (accounts for border with corners)
+    adjustment = 0.2 / THREE_POINT_RADIUS
+
+    # Generate points for the full three-point arc, extending the range by the adjustment
     return [
         (
             BASKET_X - THREE_POINT_RADIUS * np.cos(angle),
             THREE_POINT_RADIUS * np.sin(angle),
         )
-        for angle in np.linspace(-theta_sideline, theta_sideline, 360)
+        for angle in np.linspace(-theta_sideline - adjustment, theta_sideline + adjustment, 360)
     ]
 
 
@@ -56,57 +62,29 @@ def compute_center_arc(full_arc_coords):
 
 
 def compute_wing_arcs(full_arc_coords):
-    # Define the wing arc sections by filtering out the center part
+    # Define the wing arc sections by filtering out the center part, slightly adjust the boundary condition
     wing_arc_coords = [
-        point for point in full_arc_coords if abs(point[1]) > FREE_THROW_LINE_WIDTH_HALF
+        point for point in full_arc_coords if abs(point[1]) >= FREE_THROW_LINE_WIDTH_HALF - 0.1  # Slightly more inclusive
     ]
 
     # Extending and finalizing left wing arc
-    left_wing_arc = (
-        [
-            (
-                0,
-                Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE,
-            )  # Starting at the top sideline intersection
-        ]
-        + [point for point in wing_arc_coords if point[1] > 0]
-        + [
-            (
-                33,
-                COURT_WIDTH_HALF,
-            ),  # Additional point at the bottom of the corner three, at the court edge
-            (0, COURT_WIDTH_HALF),  # Endpoint at the sideline at half-court width
-        ]
-    )
-    left_wing_arc.append(
+    left_wing_arc = [
         (0, Y_MAX - CORNER_THREE_DISTANCE_TO_SIDELINE)
-    )  # Close the polygon by returning to the starting point
+    ] + [point for point in wing_arc_coords if point[1] > 0] + [
+        (X_MAX - THREE_POINT_CURVE_START, COURT_WIDTH_HALF),
+        (0, COURT_WIDTH_HALF)
+    ]
 
     # Extending and finalizing right wing arc
-    right_wing_arc = (
-        [
-            (
-                0,
-                Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE,
-            )  # Start at the lower sideline intersection
-        ]
-        + list(reversed([point for point in wing_arc_coords if point[1] < 0]))
-        + [
-            (
-                33,
-                -COURT_WIDTH_HALF,
-            ),  # Additional point at the bottom of the corner three, at the court edge
-            (
-                0,
-                -COURT_WIDTH_HALF,
-            ),  # Existing endpoint at the sideline at half-court width (negative)
-        ]
-    )
-    right_wing_arc.append(
+    right_wing_arc = [
         (0, Y_MIN + CORNER_THREE_DISTANCE_TO_SIDELINE)
-    )  # Close the polygon by returning to the starting point
+    ] + list(reversed([point for point in wing_arc_coords if point[1] < 0])) + [
+        (X_MAX - THREE_POINT_CURVE_START, -COURT_WIDTH_HALF),
+        (0, -COURT_WIDTH_HALF)
+    ]
 
     return left_wing_arc, right_wing_arc
+
 
 
 def compute_close_range_arc():
