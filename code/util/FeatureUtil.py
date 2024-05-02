@@ -19,9 +19,8 @@ class FeatureUtil:
         Returns:
         bool: True if the position is in the specified region, otherwise False.
         """
-        point = Point(x, y)
-        if basket_x < 0:
-            region = scale(region, xfact=-1, origin=(0, 0))  # Flip for left side basket
+        point = Point(x if basket_x > 0 else -x, y)
+        
         # Use intersects instead of contains to include boundary points
         return region.intersects(point)
 
