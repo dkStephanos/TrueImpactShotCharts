@@ -8,14 +8,14 @@ class ActionProcessor:
     
     def extract_shots_and_rebounds(event_df, tracking_df, possession_df):
         """
-        Extracts shots and their corresponding rebounds, mapping the shot location to the rebound location using tracking data.
+        Extracts missed shots and their corresponding rebounds, mapping the shot location to the rebound location using tracking data.
         Includes the teamId of the team that secured the rebound to compare against calculated rebound chances.
-        Now also includes the basketX position from possessions data for each shot based on the timestamp.
+        Now also includes the basketX position and the shot outcome from possessions data for each shot based on the timestamp.
 
         Args:
             event_df (DataFrame): DataFrame containing all game events.
             tracking_df (DataFrame): DataFrame containing tracking data for ball and players.
-            possession_df (DataFrame): DataFrame containing possession data with basketX values.
+            possession_df (DataFrame): DataFrame containing possession data with basketX values and shot outcomes.
 
         Returns:
             DataFrame: Contains matched shot and rebound locations, times, rebounding teamId, and basketX.
@@ -26,6 +26,17 @@ class ActionProcessor:
         # Filter for shots and rebounds
         shots_df = event_df[event_df['eventType'] == 'SHOT'].copy()
         rebounds_df = event_df[event_df['eventType'] == 'REB'].copy()
+
+        # Include outcome and basketX by applying a function to extract data from possession_df based on timestamp
+        shots_df['outcome'] = shots_df['wcTime'].apply(
+            lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['outcome']
+        )
+        shots_df['basketX'] = shots_df['wcTime'].apply(
+            lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['basketX']
+        )
+
+        # Filter shots_df further for only missed shots (FGX)
+        shots_df = shots_df[shots_df['outcome'] == 'FGX']
 
         # Reverse the merge direction: start with rebounds and find the last shot before each
         merged_df = pd.merge(rebounds_df, shots_df, on=['gameId', 'period'], suffixes=('_reb', '_shot'))
@@ -48,14 +59,11 @@ class ActionProcessor:
         valid_pairs.rename(columns={'x': 'rebound_x', 'y': 'rebound_y'}, inplace=True)
         valid_pairs.drop(columns=['wcTime'], inplace=True)
 
-        # Apply possession data for basketX based on the shot time
-        valid_pairs['basketX'] = valid_pairs['wcTime_shot'].apply(
-            lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['basketX']
-        )
-
         # Select and rename relevant columns for the result, including the rebounding teamId
         result_df = valid_pairs[['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'wcTime_shot', 'wcTime_reb', 'teamId_reb', 'basketX']]
         result_df.columns = ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time', 'rebound_teamId', 'basket_x']
-        
-        # This is rather rare, but in data quality cases/etc., if rows are produced without corresponding tracking data, drop them
+
+        # Drop rows where essential coordinates are missing
         return result_df.dropna(subset=['shot_x', 'shot_y', 'rebound_x', 'rebound_y'])
+
+
