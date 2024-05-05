@@ -446,7 +446,7 @@ class FeatureUtil:
         """
         # Ensure shot_time, wcStart, and wcEnd are properly typed
         shots_df = shots_df.copy()
-        possession_df = possession_df.copy()
+        possession_df = possession_df.copy().drop(columns=['basketX'])
 
         # Create a temporary key for merging to avoid large Cartesian products
         temp_possession_df = possession_df.copy()
@@ -467,5 +467,5 @@ class FeatureUtil:
             lambda row: classify_shot(row["shot_x"], row["shot_y"], row["basket_x"]),
             axis=1,
         )
-
+        
         return valid_shots
