@@ -538,7 +538,7 @@ class VisUtil:
             x_col (str): The name of the column in shots_df that contains the x coordinates.
             y_col (str): The name of the column in shots_df that contains the y coordinates.
             ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
-                                                                  If None, creates a new figure and axis.
+                                                                If None, creates a new figure and axis.
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
@@ -547,9 +547,15 @@ class VisUtil:
         # Mirror shots to one side of the court for half-court visualization
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col)
 
-        # Plot the shots
-        ax.scatter(shots_df[x_col], shots_df[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Shots')
-        VisUtil.set_halfcourt(ax)
+        # Filter the DataFrame by outcome and plot
+        made_shots = shots_df[shots_df['outcome'] == 'FGM']
+        missed_shots = shots_df[shots_df['outcome'] == 'FGX']
+
+        # Plot made shots as blue circles
+        ax.scatter(made_shots[x_col], made_shots[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Field Goal Made (FGM)')
+
+        # Plot missed shots as red x marks
+        ax.scatter(missed_shots[x_col], missed_shots[y_col], c='red', marker='x', edgecolors='w', s=50, alpha=0.75, label='Field Goal Missed (FGX)')
 
         # Overlay shot regions
         for region, polygon in ShotRegionUtil.regions.items():
@@ -562,4 +568,5 @@ class VisUtil:
             ax.text(centroid.x, centroid.y, region, color='black', ha='center', va='center', fontsize=10)
 
         ax.legend(loc='upper left')
+        VisUtil.set_halfcourt(ax)
         plt.show()
