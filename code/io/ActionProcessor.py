@@ -56,5 +56,6 @@ class ActionProcessor:
         # Select and rename relevant columns for the result, including the rebounding teamId
         result_df = valid_pairs[['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'wcTime_shot', 'wcTime_reb', 'teamId_reb', 'basketX']]
         result_df.columns = ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time', 'rebound_teamId', 'basket_x']
-
-        return result_df
+        
+        # This is rather rare, but in data quality cases/etc., if rows are produced without corresponding tracking data, drop them
+        return result_df.dropna(subset=['shot_x', 'shot_y', 'rebound_x', 'rebound_y'])
