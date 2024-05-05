@@ -464,7 +464,7 @@ class VisUtil:
         self.ax.figure.canvas.draw()
         plt.show()
             
-    def plot_court_hexmap(df, x_col, y_col, label='Density (log scale)'):
+    def plot_court_hexmap(df, x_col, y_col, label='Density (log scale)', return_data=False):
         """
         Plots a hexmap of locations on the basketball court based on provided x and y coordinates.
         Each cell represents approximately 1.5 feet in radius, and cells are color-weighted based on the density.
@@ -496,37 +496,49 @@ class VisUtil:
             extent=[0, 47, -25, 25]  # Set the extent to match the half-court dimensions
         )
 
-        # Add a color bar
-        cbar = plt.colorbar(hexbin, ax=ax, pad=0.01)
-        cbar.set_label(label)
-
-        # Retrieve counts from hexbin and determine tick labels directly from the bin counts
-        counts = hexbin.get_array()
-        unique_counts = np.unique(counts[counts > 0]).astype(int)  # Get unique non-zero counts as integers
-
-        # Sort unique counts to ensure they are in increasing order for setting ticks
-        sorted_counts = np.sort(unique_counts)
-
-        # Generate indices to pick exactly 8 labels, if there are enough unique counts
-        num_labels = min(8, len(sorted_counts))  # Use 8 or fewer if there aren't enough unique counts
-        indices = np.linspace(0, len(sorted_counts) - 1, num=num_labels, dtype=int)
-        selected_ticks = sorted_counts[indices]
-
-        # Apply these selected counts as ticks to the color bar
-        cbar.set_ticks(selected_ticks)  # Set ticks at selected counts
-        cbar.set_ticklabels(selected_ticks)  # Use the selected counts as labels
-        
-        # Disable minor ticks on the colorbar to avoid extra ticks
-        cbar.ax.minorticks_off()
-
         # Set plot limits to only show half-court
         VisUtil.set_halfcourt(ax)
+        
+        if return_data:
+            # Create DataFrame from hexbin data
+            hexbin_data = {
+                'centers': hexbin.get_offsets(),
+                'densities': hexbin.get_array()
+            }
+            hexbin_df = pd.DataFrame(hexbin_data['centers'], columns=['x', 'y'])
+            hexbin_df['density'] = hexbin_data['densities']
+            plt.close(fig)  # Close the plot to prevent it from showing
+            return hexbin_df
+        else:
+            # Add a color bar
+            cbar = plt.colorbar(hexbin, ax=ax, pad=0.01)
+            cbar.set_label(label)
 
-        # Remove the axis ticks and labels
-        ax.axis('off')
+            # Retrieve counts from hexbin and determine tick labels directly from the bin counts
+            counts = hexbin.get_array()
+            unique_counts = np.unique(counts[counts > 0]).astype(int)  # Get unique non-zero counts as integers
 
-        # Display the plot
-        plt.show()
+            # Sort unique counts to ensure they are in increasing order for setting ticks
+            sorted_counts = np.sort(unique_counts)
+
+            # Generate indices to pick exactly 8 labels, if there are enough unique counts
+            num_labels = min(8, len(sorted_counts))  # Use 8 or fewer if there aren't enough unique counts
+            indices = np.linspace(0, len(sorted_counts) - 1, num=num_labels, dtype=int)
+            selected_ticks = sorted_counts[indices]
+
+            # Apply these selected counts as ticks to the color bar
+            cbar.set_ticks(selected_ticks)  # Set ticks at selected counts
+            cbar.set_ticklabels(selected_ticks)  # Use the selected counts as labels
+            
+            # Disable minor ticks on the colorbar to avoid extra ticks
+            cbar.ax.minorticks_off()
+
+            # Set plot limits and disable axis
+            ax.axis('off')
+
+            # Display the plot
+            plt.show()
+
         
     @staticmethod
     def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
