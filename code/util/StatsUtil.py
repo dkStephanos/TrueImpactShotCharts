@@ -6,6 +6,7 @@ from scipy.spatial.distance import euclidean
 from shapely.geometry import Point, Polygon
 from code.io.TrackingProcessor import TrackingProcessor
 from code.util.VisUtil import VisUtil
+
 class StatsUtil:
     def calculate_true_points(df):
         """
@@ -49,17 +50,11 @@ class StatsUtil:
                     for ft in free_throws.itertuples():
                         if ft.made:
                             points += 1
-                            print(
-                                f"Adding point for free throw at {ft.wcTime} by {ft.playerId}"
-                            )
                         # Look for the next event after this free throw
                         ft_index = df.index.get_loc(ft.Index)
                         if ft_index + 1 < len(df):
                             next_ft_event = df.iloc[ft_index + 1]
                             if next_ft_event["eventType"] != "FT":
-                                print(
-                                    f"Stopping at {next_ft_event['eventType']} at {next_ft_event['wcTime']}"
-                                )
                                 break
 
             # Store the total points produced in the DataFrame
