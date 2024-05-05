@@ -1,10 +1,11 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import euclidean
 from shapely.geometry import Point, Polygon
 from code.io.TrackingProcessor import TrackingProcessor
-
+from code.util.VisUtil import VisUtil
 class StatsUtil:
     def calculate_true_points(df):
         """
@@ -223,3 +224,33 @@ class StatsUtil:
 
         return rebound_chances, team_rebound_chances
 
+    def generate_region_hexbin_data(shot_rebound_df, regions):
+        """
+        Generates and saves hexbin data for multiple court regions based on rebound locations.
+
+        Args:
+            shot_rebound_df (DataFrame): DataFrame containing rebound locations.
+            regions (dict): A dictionary where keys are region names and values are functions that filter shot_rebound_df for each specific region.
+
+        Returns:
+            DataFrame: A DataFrame containing rebound density data for each specified court region.
+        """
+        all_data = []
+
+        for region_name, _ in regions.items():
+            # Filter data for the current region
+            region_data = shot_rebound_df.loc[shot_rebound_df['shot_classification'] == region_name]
+            # Generate hexbin data for the region
+            hexbin_df = VisUtil.plot_court_hexmap(region_data, 'rebound_x', 'rebound_y', label='Density (log scale)', return_data=True)
+            hexbin_df['region'] = region_name  # Add region name to the DataFrame
+            
+            # Append to the list
+            all_data.append(hexbin_df)
+        
+        # Concatenate all region data into a single DataFrame
+        final_df = pd.concat(all_data, ignore_index=True)
+
+        # Save the DataFrame to a CSV file
+        final_df.to_csv("hexbin_region_data.csv", index=False)
+
+        return final_df
