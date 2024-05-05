@@ -561,5 +561,5 @@ class VisUtil:
             centroid = polygon.centroid
             ax.text(centroid.x, centroid.y, region, color='black', ha='center', va='center', fontsize=10)
 
-        ax.legend(loc='upper right')
+        ax.legend(loc='upper left')
         plt.show()
