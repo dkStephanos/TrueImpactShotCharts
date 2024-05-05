@@ -305,3 +305,8 @@ class ShotRegionUtil:
     @property
     def regions(cls):
         return cls.compute_regions()
+
+    @classmethod
+    @property
+    def region_names(cls):
+        return list(cls.region_colors.keys())
