@@ -544,26 +544,19 @@ class VisUtil:
             fig, ax = plt.subplots(figsize=(12, 11))
             VisUtil.setup_court(ax)
 
-        # Mirror shots to one side of the court for half-court visualization
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col)
 
-        # Filter the DataFrame by outcome and plot
         made_shots = shots_df[shots_df['outcome'] == 'FGM']
         missed_shots = shots_df[shots_df['outcome'] == 'FGX']
 
-        # Plot made shots as blue circles
         ax.scatter(made_shots[x_col], made_shots[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Field Goal Made (FGM)')
+        ax.scatter(missed_shots[x_col], missed_shots[y_col], c='red', marker='x', s=50, alpha=0.75, label='Field Goal Missed (FGX)')
 
-        # Plot missed shots as red x marks
-        ax.scatter(missed_shots[x_col], missed_shots[y_col], c='red', marker='x', edgecolors='w', s=50, alpha=0.75, label='Field Goal Missed (FGX)')
-
-        # Overlay shot regions
         for region, polygon in ShotRegionUtil.regions.items():
             if region in ["BEYOND_HALFCOURT"]:
-                continue  # Optionally skip drawing the beyond halfcourt area
-            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, color=ShotRegionUtil.region_colors.get(region, "#FFFFFF"), alpha=0.3, linewidth=1.5, linestyle='--')
+                continue
+            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, facecolor=ShotRegionUtil.region_colors.get(region, "#FFFFFF"), alpha=0.3, linewidth=1.5, linestyle='--')
             ax.add_patch(patch)
-            # Label the region
             centroid = polygon.centroid
             ax.text(centroid.x, centroid.y, region, color='black', ha='center', va='center', fontsize=10)
 
