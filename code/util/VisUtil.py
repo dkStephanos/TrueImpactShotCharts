@@ -64,6 +64,8 @@ class VisUtil:
         "1610612764": ("#002B5C", "Washington Wizards"),
     }
 
+    # NOTE: This class is designed to work with a single game's worth of data
+    # TODO: allow for more dynamic seeting of home/away team info
     def __init__(self, tracking_df: pd.DataFrame):
         plt.ioff()
         self.tracking_df: pd.DataFrame = tracking_df
@@ -105,14 +107,15 @@ class VisUtil:
         VisUtil.setup_court(self.ax)
         home_players_ids, away_players_ids = self.extract_moment_players(moments_df)
         self.setup_players_and_ball(home_players_ids, away_players_ids)
+        
         return self.setup_labels(home_players_ids, away_players_ids)
         
     def extract_moment_players(self, moments_df):
         # Collect home and away player_ids (ball has a teamId of -1)
         players_df = moments_df.loc[
-            moments_df["teamId"] != -1, ["playerId", "playerName", "teamId"]
+            moments_df["teamId"] != "-1", ["playerId", "playerName", "teamId"]
         ].drop_duplicates()
-        
+
         home_players_ids = list(
             players_df.loc[players_df["teamId"] == self.home_team_id][
                 "playerId"
@@ -198,7 +201,7 @@ class VisUtil:
             )
             for player_id in away_players_ids
         ]
-        
+
         # Render and scale the table
         table = plt.table(
             cellText=list(zip(home_players, away_players)),
@@ -390,20 +393,21 @@ class VisUtil:
         self.ax.figure.canvas.draw()
         plt.show()
 
-    def plot_voronoi_at_timestamp(self, timestamp, basket_x):
-        """Plot the Voronoi diagram for the players' positions at a specific timestamp with team-based cell shading,
+    def plot_voronoi_at_timestamp(self, timestamp, basket_x, return_data=False):
+        """Plot or return the Voronoi diagram for the players' positions at a specific timestamp with team-based cell shading,
         confined to the half of the court based on basket location."""
-        self.fig, self.ax = plt.subplots(figsize=(12, 8))
         moments_df = self.tracking_df[self.tracking_df["wcTime"] == timestamp]
         
         if moments_df.empty:
             raise ValueError("No data available for the specified timestamp")
 
-        self.setup_visualization(moments_df)  # Setup the court visualization based on the current moments dataframe
+        if not return_data:
+            self.fig, self.ax = plt.subplots(figsize=(12, 8))
+            self.setup_visualization(moments_df)  # Setup the court visualization based on the current moments dataframe
 
         ball_data = moments_df[moments_df["teamId"] == "-1"].iloc[0] if not moments_df[moments_df["teamId"] == "-1"].empty else None
         player_data = moments_df[moments_df["teamId"] != "-1"][["x", "y", "teamId"]].values
-        
+
         # Define artificial boundary points at the edges of the court
         boundary_points = np.array([[-47, -25], [-47, 25], [47, -25], [47, 25]])
         all_points = np.vstack([player_data[:, :2], boundary_points])
@@ -412,24 +416,14 @@ class VisUtil:
 
         # Determine half-court boundaries based on the basket location
         if basket_x > 0:
-            # Focus on the right half of the court
             half_court_bounds = Polygon([(0, -25), (0, 25), (47, 25), (47, -25)])
-            plot_xlim = (0, 47)
         else:
-            # Focus on the left half of the court
             half_court_bounds = Polygon([(-47, -25), (-47, 25), (0, 25), (0, -25)])
-            plot_xlim = (-47, 0)
 
-        voronoi_plot_2d(
-            vor,
-            ax=self.ax,
-            show_vertices=False,
-            show_points=False,
-            line_colors="orange",
-            line_width=2,
-            line_alpha=0.6,
-        )
+        if not return_data:
+            voronoi_plot_2d(vor, ax=self.ax, show_vertices=False, show_points=False, line_colors="orange", line_width=2, line_alpha=0.6)
 
+        team_regions = {}
         for point_index, region_index in enumerate(vor.point_region):
             region = vor.regions[region_index]
             if all(v >= 0 for v in region) and region:  # Ensure the region is bounded
@@ -438,31 +432,40 @@ class VisUtil:
                     polygon = Polygon(vertices)
                     clipped_polygon = polygon.intersection(half_court_bounds)  # Clip to court bounds
                     if not clipped_polygon.is_empty:
-                        team_id = player_data[point_index][2]
-                        team_color = self.TEAM_COLOR_DICT.get(team_id, ['#808080'])[0]
-                        patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
-                        self.ax.add_patch(patch)
+                        team_id = int(player_data[point_index][2])
+                        if return_data:
+                            team_regions[team_id] = clipped_polygon
+                        else:
+                            team_color = self.TEAM_COLOR_DICT.get(team_id, '#808080')
+                            patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
+                            self.ax.add_patch(patch)
 
-        # Set plot limits to the appropriate half-court dimensions
-        self.ax.set_xlim(plot_xlim)
-        self.ax.set_ylim(-25, 25)
+        if return_data:
+            return team_regions
+        else:
+            # Set plot limits to the appropriate half-court dimensions
+            self.ax.set_xlim([0, 47] if basket_x > 0 else [-47, 0])
+            self.ax.set_ylim(-25, 25)
         
-        # Plot players
-        for index, row in moments_df.iterrows():
-            player_id = row["playerId"]
-            if player_id in self.player_circles:
-                circle = self.player_circles[player_id]
-                circle.center = (row["x"], row["y"])
-                self.ax.add_patch(circle)
-                self.ax.annotate(f"{self.players_dict[player_id][1]}", xy=(row["x"], row["y"]), color="white", ha="center", va="center", fontweight="bold", fontsize=10)
+            # Plot players
+            for index, row in moments_df.iterrows():
+                player_id = row["playerId"]
+                if player_id in self.player_circles:
+                    circle = self.player_circles[player_id]
+                    circle.center = (row["x"], row["y"])
+                    self.ax.add_patch(circle)
+                    self.ax.annotate(f"{self.players_dict[player_id][1]}", xy=(row["x"], row["y"]), color="white", ha="center", va="center", fontweight="bold", fontsize=10)
 
-        # Plot the ball if data is available
-        if ball_data is not None:
-            ball_circle = Circle((ball_data["x"], ball_data["y"]), ball_data["z"] / self.NORMALIZATION_COEF, color="orange", zorder=5)
-            self.ax.add_patch(ball_circle)
+            # Plot the ball if data is available
+            if ball_data is not None:
+                ball_circle = Circle((ball_data["x"], ball_data["y"]), ball_data["z"] / self.NORMALIZATION_COEF, color="orange", zorder=5)
+                self.ax.add_patch(ball_circle)
 
-        self.ax.figure.canvas.draw()
-        plt.show()
+            self.ax.figure.canvas.draw()
+            
+            self.ax.axis('off')
+            plt.show()
+
             
     def plot_court_hexmap(df, x_col, y_col, label='Density (log scale)', return_data=False):
         """
