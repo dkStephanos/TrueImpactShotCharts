@@ -191,7 +191,6 @@ class StatsUtil:
 
         
     def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data):
-        print('calculating row...\n\n', row)
         # Identify the hexbin data for the shot's classified region
         region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']]
 
