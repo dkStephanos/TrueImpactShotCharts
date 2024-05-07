@@ -432,13 +432,17 @@ class VisUtil:
                     polygon = Polygon(vertices)
                     clipped_polygon = polygon.intersection(half_court_bounds)  # Clip to court bounds
                     if not clipped_polygon.is_empty:
-                        team_id = int(player_data[point_index][2])
-                        if return_data:
-                            team_regions[team_id] = clipped_polygon
+                        if point_index < len(player_data):  # Check if index is within the range of player_data
+                            team_id = str(player_data[point_index][2])
+                            if return_data:
+                                team_regions[team_id] = clipped_polygon
+                            else:
+                                team_color = self.TEAM_COLOR_DICT.get(team_id, '#808080')[0]
+                                patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
+                                self.ax.add_patch(patch)
                         else:
-                            team_color = self.TEAM_COLOR_DICT.get(team_id, '#808080')
-                            patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
-                            self.ax.add_patch(patch)
+                            continue  # Skip boundary points which do not correspond to any player
+
 
         if return_data:
             return team_regions
