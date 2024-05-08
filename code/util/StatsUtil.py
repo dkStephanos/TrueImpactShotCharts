@@ -158,8 +158,10 @@ class StatsUtil:
         player_positions = tracking_df.loc[(tracking_df['teamId'] != "-1") & (tracking_df['wcTime'] == timestamp), ['playerId', 'x', 'y', 'teamId']]
         
         # Use the modified Voronoi method to retrieve Voronoi polygons instead of plotting
+        if basket_x != 41.75:
+            tracking_df = TrackingProcessor.mirror_court_data(tracking_df, 'x', 'y', 41.75)
         vis = VisUtil(tracking_df)
-        team_regions = vis.plot_voronoi_at_timestamp(timestamp, basket_x, return_data=True)
+        team_regions = vis.plot_voronoi_at_timestamp(timestamp, 41.75, return_data=True)
 
         # Map team IDs to Voronoi polygons
         player_teams = dict(zip(player_positions['playerId'], player_positions['teamId']))
