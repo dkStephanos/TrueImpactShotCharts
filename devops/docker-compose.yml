@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  jupyterlab:
+    build:
+      context: ..  # This sets the context to the project root
+      dockerfile: devops/Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - ../code:/usr/src/app/code
+      - ../data:/usr/src/app/data
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTHONPATH=/usr/src/app
+    container_name: trueimpact_shotcharts
+    working_dir: /usr/src/app
