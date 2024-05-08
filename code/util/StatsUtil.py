@@ -208,8 +208,10 @@ class StatsUtil:
         return team_rebound_chances.get(off_team_id, 0), team_rebound_chances.get(def_team_id, 0)
 
     def assign_rebound_chances_to_shots(shot_rebound_df, tracking_df, hexbin_region_data):
+        from tqdm import tqdm
+        tqdm.pandas()
         # Apply the function row-wise using apply and pass additional args
-        result = shot_rebound_df.apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data))
+        result = shot_rebound_df.progress_apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data))
         
         # Assign results to new columns in the DataFrame
         shot_rebound_df['off_reb_chance'], shot_rebound_df['def_reb_chance'] = result[0], result[1]
