@@ -18,11 +18,11 @@ class TrackingProcessor:
         gameDate
     """
     def load_game(game_id):
-        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
+        tracking_df = pd.read_csv('../data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         return tracking_df.loc[tracking_df['gameId'] == game_id].reset_index(drop=True)
     
     def load_games(game_ids: list = "all"):
-        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
+        tracking_df = pd.read_csv('../data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         if game_ids != "all":
             tracking_df = tracking_df.loc[tracking_df['gameId'].isin(game_ids)].reset_index(drop=True)
         
@@ -66,7 +66,7 @@ class TrackingProcessor:
         
         return off_ids, def_ids
     
-    def mirror_court_data(tracking_df, column_name, basket_x=41.75):
+    def mirror_court_data(tracking_df, x_col_name='x', y_col_name='y', basket_x=41.75):
         """
         Mirrors data points across the center line of a basketball court based on the basket_x value provided.
         This ensures all data points are standardized to one half of the court, assuming all action is towards the specified basket.
@@ -81,8 +81,18 @@ class TrackingProcessor:
             DataFrame: A DataFrame with the specified coordinates mirrored onto the desired half of the court.
         """
         # Mirror the x-coordinates based on whether they match the specified basket_x
-        tracking_df.copy()[column_name] = tracking_df.apply(
-            lambda row: -row[column_name] if row["basket_x"] != basket_x else row[column_name],
+        if "basket_x" in tracking_df.columns:
+            tracking_df[x_col_name] = tracking_df.apply(
+                lambda row: -row[x_col_name] if row["basket_x"] != basket_x else row[x_col_name],
+                axis=1
+            )
+        else:
+            tracking_df[x_col_name] = tracking_df.apply(
+                lambda row: -row[x_col_name],
+                axis=1
+            )
+        tracking_df[y_col_name] = tracking_df.apply(
+            lambda row: -row[y_col_name],
             axis=1
         )
 
