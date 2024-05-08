@@ -82,7 +82,7 @@ class VisUtil:
         )
 
         players_df = pd.read_csv(
-            "data/src/basic_player_info.csv",
+            "../data/src/basic_player_info.csv",
             dtype={"person_id": str, "jersey_num": str},
         )
         self.players_dict = {
@@ -101,7 +101,7 @@ class VisUtil:
         
     @staticmethod
     def load_court_image():
-        return plt.imread("data/img/fullcourt.png")
+        return plt.imread("../data/img/fullcourt.png")
     
     def setup_visualization(self, moments_df):
         VisUtil.setup_court(self.ax)
@@ -490,7 +490,7 @@ class VisUtil:
         VisUtil.setup_court(ax)
         
         # Mirror data points across half court for plotting
-        df = TrackingProcessor.mirror_court_data(df, x_col)
+        df = TrackingProcessor.mirror_court_data(df, x_col, y_col)
 
         # Plotting the data using hexbin
         hexbin = ax.hexbin(
@@ -563,7 +563,7 @@ class VisUtil:
             fig, ax = plt.subplots(figsize=(12, 11))
             VisUtil.setup_court(ax)
 
-        shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col)
+        shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
 
         made_shots = shots_df[shots_df['outcome'] == 'FGM']
         missed_shots = shots_df[shots_df['outcome'] == 'FGX']
@@ -581,4 +581,20 @@ class VisUtil:
 
         ax.legend(loc='upper left')
         VisUtil.set_halfcourt(ax)
+        plt.show()
+        
+    def plot_hexmap_from_df(hexmap_df):
+        # Setup the plot - adjust figsize if needed
+        fig, ax = plt.subplots(figsize=(12, 11))
+        VisUtil.setup_court(ax)
+        VisUtil.set_halfcourt(ax)
+                
+        # Create a hexbin plot
+        plt.hexbin(hexmap_df['x'], hexmap_df['y'], C=hexmap_df['density'], gridsize=50, cmap='viridis', reduce_C_function=np.sum)
+        plt.colorbar(label='Density')
+        
+        # Adding labels and title
+        plt.title('Hexmap Density Visualization')
+        
+        # Show the plot
         plt.show()
