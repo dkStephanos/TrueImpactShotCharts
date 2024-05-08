@@ -29,11 +29,11 @@ class EventProcessor:
         defenderName
     """
     def load_game(game_id):
-        event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str,})
+        event_df = pd.read_csv('../data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str,})
         return event_df.loc[event_df['gameId'] == game_id].reset_index(drop=True)
     
     def load_games(game_ids: list = "all"):
-        event_df = pd.read_csv('data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str,})
+        event_df = pd.read_csv('../data/src/events.csv', dtype={'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str,})
         if game_ids != "all":
             event_df = event_df.loc[event_df['gameId'].isin(game_ids)].reset_index(drop=True)
         
