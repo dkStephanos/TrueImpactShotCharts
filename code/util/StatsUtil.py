@@ -140,13 +140,13 @@ class StatsUtil:
             for i in range(player_range)
         ]
 
-    def calculate_rebound_chances(tracking_df, timestamp, hexbin_data, basket_x):
+    def calculate_rebound_chances(moment_df, timestamp, moment_basket_x, hexbin_data, hexbin_basket_x):
         """
         Calculates the rebound chances for each player based on Voronoi regions and precomputed hexbin densities.
         Additionally, computes rebound chances by team ID.
 
         Args:
-            moments_df (DataFrame): DataFrame containing player positions and team IDs.
+            moment_df (DataFrame): DataFrame containing player positions and team IDs.
             hexbin_data (DataFrame): DataFrame containing precomputed hexbin centers and density values.
             basket_x (float): X-coordinate of the basket to determine court side for Voronoi.
 
@@ -155,17 +155,17 @@ class StatsUtil:
                 - dict keyed by player ID with the percentage chance of rebound.
                 - dict keyed by team ID with the percentage chance of rebound.
         """
-        # Calculate Voronoi regions for players
-        player_positions = tracking_df.loc[(tracking_df['teamId'] != "-1") & (tracking_df['wcTime'] == timestamp), ['playerId', 'x', 'y', 'teamId']]
+        # Collect on-court players Id's/teamId's
+        player_info = moment_df.loc[(moment_df['teamId'] != "-1") & (moment_df['wcTime'] == timestamp), ['playerId', 'teamId']]
         
         # Use the modified Voronoi method to retrieve Voronoi polygons instead of plotting
-        if basket_x != 41.75:       # hacky
-            tracking_df = TrackingProcessor.mirror_court_data(tracking_df, 'x', 'y', 41.75)
-        vis = VisUtil(tracking_df)
-        team_regions = vis.plot_voronoi_at_timestamp(timestamp, 41.75, return_data=True)
+        if moment_basket_x != hexbin_basket_x:
+            moment_df = TrackingProcessor.mirror_court_data(moment_df, 'x', 'y', hexbin_basket_x)
+        vis = VisUtil(moment_df)
+        team_regions = vis.plot_voronoi_at_timestamp(timestamp, hexbin_basket_x, return_data=True)
 
         # Map team IDs to Voronoi polygons
-        player_teams = dict(zip(player_positions['playerId'], player_positions['teamId']))
+        player_teams = dict(zip(player_info['playerId'], player_info['teamId']))
         player_regions = {player_id: team_regions[team_id] for player_id, team_id in player_teams.items() if team_id in team_regions}
 
         # Initialize dictionaries to store rebound potentials
@@ -193,13 +193,13 @@ class StatsUtil:
         return rebound_chances, team_rebound_chances
 
         
-    def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data):
+    def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data, hexbin_basket_x):
         # Identify the hexbin data for the shot's classified region
         #region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']]
 
         # Calculate the rebound chances
         _, team_rebound_chances = StatsUtil.calculate_rebound_chances(
-            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['shot_time'], hexbin_region_data, row["basket_x"]
+            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['shot_time'], row["basket_x"], hexbin_region_data, hexbin_basket_x
         )
 
         # Return rebound chances for defensive and offensive teams
@@ -209,9 +209,14 @@ class StatsUtil:
         return team_rebound_chances.get(off_team_id, 0), team_rebound_chances.get(def_team_id, 0)
 
     def assign_rebound_chances_to_shots(shot_rebound_df, tracking_df, hexbin_region_data):
+        # Allows for progress bar on pd.apply
         tqdm.pandas()
+        
+        # Determine the basket location used in the hexbin plots (important data is mirrored to this side pre-calculations)
+        hexbin_basket_x = 41.75 if hexbin_region_data['x'].sum() > 0 else -41.75
+        
         # Apply the function row-wise using apply and pass additional args
-        result = shot_rebound_df.progress_apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data))
+        result = shot_rebound_df.progress_apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data, hexbin_basket_x))
         
         # Assign results to new columns in the DataFrame
         shot_rebound_df.loc[:, 'off_reb_chance'] = result[0]
