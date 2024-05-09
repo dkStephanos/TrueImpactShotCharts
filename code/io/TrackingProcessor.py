@@ -82,20 +82,20 @@ class TrackingProcessor:
         """
         # Mirror the x-coordinates based on whether they match the specified basket_x
         if "basket_x" in tracking_df.columns:
-            tracking_df[x_col_name] = tracking_df.apply(
+            tracking_df.loc[:, x_col_name] = tracking_df.apply(
                 lambda row: -row[x_col_name] if row["basket_x"] != basket_x else row[x_col_name],
                 axis=1
             )
-            tracking_df[y_col_name] = tracking_df.apply(
+            tracking_df.loc[:, y_col_name] = tracking_df.apply(
                 lambda row: -row[y_col_name] if row["basket_x"] != basket_x else row[x_col_name],
                 axis=1
             )
         else:
-            tracking_df[x_col_name] = tracking_df.apply(
+            tracking_df.loc[:, x_col_name] = tracking_df.apply(
                 lambda row: -row[x_col_name],
                 axis=1
             )
-            tracking_df[y_col_name] = tracking_df.apply(
+            tracking_df.loc[:, y_col_name] = tracking_df.apply(
                 lambda row: -row[y_col_name],
                 axis=1
             )
