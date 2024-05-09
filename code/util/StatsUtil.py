@@ -193,13 +193,13 @@ class StatsUtil:
         return rebound_chances, team_rebound_chances
 
         
-    def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data, hexbin_basket_x):
-        # Identify the hexbin data for the shot's classified region
-        #region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']]
+    def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data, hexbin_basket_x, shot_region_specific=False):
+        # Identify the hexbin data for the shot's classified region (if prompted)
+        region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']] if shot_region_specific else hexbin_region_data
 
         # Calculate the rebound chances
         _, team_rebound_chances = StatsUtil.calculate_rebound_chances(
-            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['shot_time'], row["basket_x"], hexbin_region_data, hexbin_basket_x
+            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['shot_time'], row["basket_x"], region_data, hexbin_basket_x
         )
 
         # Return rebound chances for defensive and offensive teams
