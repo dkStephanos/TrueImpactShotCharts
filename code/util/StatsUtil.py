@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from tqdm import tqdm
+from scipy.spatial import Voronoi
 from scipy.spatial.distance import euclidean
 from shapely.geometry import Point, Polygon
 from code.io.TrackingProcessor import TrackingProcessor
@@ -158,7 +159,7 @@ class StatsUtil:
         player_positions = tracking_df.loc[(tracking_df['teamId'] != "-1") & (tracking_df['wcTime'] == timestamp), ['playerId', 'x', 'y', 'teamId']]
         
         # Use the modified Voronoi method to retrieve Voronoi polygons instead of plotting
-        if basket_x != 41.75:
+        if basket_x != 41.75:       # hacky
             tracking_df = TrackingProcessor.mirror_court_data(tracking_df, 'x', 'y', 41.75)
         vis = VisUtil(tracking_df)
         team_regions = vis.plot_voronoi_at_timestamp(timestamp, 41.75, return_data=True)
@@ -194,11 +195,11 @@ class StatsUtil:
         
     def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data):
         # Identify the hexbin data for the shot's classified region
-        region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']]
+        #region_data = hexbin_region_data[hexbin_region_data['region'] == row['shot_classification']]
 
         # Calculate the rebound chances
         _, team_rebound_chances = StatsUtil.calculate_rebound_chances(
-            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['rebound_time'], region_data, row["basket_x"]
+            tracking_df.copy().loc[tracking_df['gameId'] == row['gameId']], row['shot_time'], hexbin_region_data, row["basket_x"]
         )
 
         # Return rebound chances for defensive and offensive teams
@@ -208,13 +209,13 @@ class StatsUtil:
         return team_rebound_chances.get(off_team_id, 0), team_rebound_chances.get(def_team_id, 0)
 
     def assign_rebound_chances_to_shots(shot_rebound_df, tracking_df, hexbin_region_data):
-        from tqdm import tqdm
         tqdm.pandas()
         # Apply the function row-wise using apply and pass additional args
         result = shot_rebound_df.progress_apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data))
         
         # Assign results to new columns in the DataFrame
-        shot_rebound_df['off_reb_chance'], shot_rebound_df['def_reb_chance'] = result[0], result[1]
+        shot_rebound_df.loc[:, 'off_reb_chance'] = result[0]
+        shot_rebound_df.loc[:, 'def_reb_chance'] = result[1]
         
         return shot_rebound_df
 
