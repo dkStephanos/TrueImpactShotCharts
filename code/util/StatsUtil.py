@@ -12,12 +12,8 @@ class StatsUtil:
     def calculate_true_points(df):
         """
         Enhances the DataFrame with shot attempts to include a 'true points produced' column,
-        which accounts for points from made shots and subsequent free throws following fouls on those shots,
-        using TOUCH events to determine the end of a free throw sequence.
+        which accounts for points from made shots and subsequent free throws following fouls on those shots.
         """
-        # Ensure the DataFrame is sorted by wcTime if not already sorted
-        df = df.sort_values(by="wcTime")
-
         # Filter to get only shot attempts
         shots_df = df[df["eventType"] == "SHOT"].copy()
 
@@ -33,19 +29,17 @@ class StatsUtil:
             shots_df.at[index, "points_produced"] = points
 
             # Find the immediate next event in the DataFrame
-            if index + 1 < len(df):
-                next_event = df.iloc[index + 1]
+            shot_index = df.index.get_loc(index)
+            if shot_index + 1 < len(df):
+                next_event = df.iloc[shot_index + 1]
                 # Check if the next event is a FOUL related to this SHOT
-                if (
-                    next_event["eventType"] == "FOUL"
-                    and next_event["fouledId"] == row["playerId"]
-                ):
+                if next_event["eventType"] == "FOUL" and next_event["fouledId"] == row["playerId"]:
                     # Find free throws directly related to this foul
                     free_throws = df[
-                        (df["eventType"] == "FT")
-                        & (df["wcTime"] > next_event["wcTime"])
-                        & (df["playerId"] == row["playerId"])
-                        & (df["gameId"] == row["gameId"])
+                        (df["eventType"] == "FT") &
+                        (df["wcTime"] > next_event["wcTime"]) &
+                        (df["playerId"] == row["playerId"]) &
+                        (df["gameId"] == row["gameId"])
                     ].sort_values(by="wcTime")
 
                     for ft in free_throws.itertuples():
@@ -55,7 +49,8 @@ class StatsUtil:
                         ft_index = df.index.get_loc(ft.Index)
                         if ft_index + 1 < len(df):
                             next_ft_event = df.iloc[ft_index + 1]
-                            if next_ft_event["eventType"] != "FT":
+                            # Break if next event is not a FT and it's not a team rebound after a missed FT (happens if you miss the first in a sequence)
+                            if next_ft_event["eventType"] != "FT" and not (next_ft_event["eventType"] == "REB" and pd.isna(next_ft_event["playerId"]) and not ft.made):
                                 break
 
             # Store the total points produced in the DataFrame
