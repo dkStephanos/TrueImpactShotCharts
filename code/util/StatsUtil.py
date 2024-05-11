@@ -56,18 +56,7 @@ class StatsUtil:
             # Store the total points produced in the DataFrame
             shots_df.at[index, "true_points_produced"] = points
 
-        return shots_df[
-            [
-                "gameId",
-                "playerId",
-                "playerName",
-                "teamId",
-                "period",
-                "wcTime",
-                "points_produced",
-                "true_points_produced",
-            ]
-        ]
+        return shots_df
 
     def travel_dist_all(event_df):
         """
