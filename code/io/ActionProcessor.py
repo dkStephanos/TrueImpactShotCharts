@@ -20,9 +20,9 @@ class ActionProcessor:
         Returns:
             DataFrame: Contains matched shot and rebound locations, times, rebounding teamId, and basketX.
         """
-        # Extract the ball locations from the tracking_df
+        # Extract ball locations where teamId is '-1'
         tracking_df = tracking_df[tracking_df["teamId"] == "-1"].copy()
-        
+
         # Filter for shots and rebounds
         shots_df = event_df[event_df['eventType'] == 'SHOT'].copy()
         rebounds_df = event_df[event_df['eventType'] == 'REB'].copy()
@@ -34,36 +34,28 @@ class ActionProcessor:
         shots_df['basketX'] = shots_df['wcTime'].apply(
             lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['basketX']
         )
-
-        # Filter shots_df further for only missed shots (FGX)
-        shots_df = shots_df[shots_df['outcome'] == 'FGX']
-
-        # Reverse the merge direction: start with rebounds and find the last shot before each
-        merged_df = pd.merge(rebounds_df, shots_df, on=['gameId', 'period'], suffixes=('_reb', '_shot'))
-
-        # Filter to ensure that only valid shot-rebound pairs are considered
-        valid_pairs = merged_df[merged_df['wcTime_shot'] < merged_df['wcTime_reb']].copy()
-
-        # Sort to get the latest shot before each rebound
-        valid_pairs.sort_values(by=['gameId', 'period', 'wcTime_reb', 'wcTime_shot'], ascending=[True, True, True, False], inplace=True)
         
-        # Drop duplicates to keep only the most recent shot for each rebound
+        # Merging shots and rebounds on 'gameId' and 'period', then filtering and deduplicating
+        merged_df = pd.merge(rebounds_df, shots_df, on=['gameId', 'period'], suffixes=('_reb', '_shot'))
+        valid_pairs = merged_df[merged_df['wcTime_shot'] < merged_df['wcTime_reb']]
+        valid_pairs = valid_pairs.sort_values(by=['gameId', 'period', 'wcTime_reb', 'wcTime_shot'], ascending=[True, True, True, False])
+        valid_pairs = valid_pairs.drop_duplicates(subset=['gameId', 'period', 'wcTime_shot'])
         valid_pairs = valid_pairs.drop_duplicates(subset=['gameId', 'period', 'wcTime_reb'])
 
-        # Merge tracking data for the positions
+        # Merge with tracking data for positions
         valid_pairs = pd.merge(valid_pairs, tracking_df[['gameId', 'wcTime', 'x', 'y']], left_on=['gameId', 'wcTime_shot'], right_on=['gameId', 'wcTime'], how='left', suffixes=('', '_shot'))
-        valid_pairs.rename(columns={'x': 'shot_x', 'y': 'shot_y'}, inplace=True)
-        valid_pairs.drop(columns=['wcTime'], inplace=True)
+        valid_pairs = valid_pairs.rename(columns={'x': 'shot_x', 'y': 'shot_y'})
+        valid_pairs = valid_pairs.drop(columns=['wcTime'])
 
         valid_pairs = pd.merge(valid_pairs, tracking_df[['gameId', 'wcTime', 'x', 'y']], left_on=['gameId', 'wcTime_reb'], right_on=['gameId', 'wcTime'], how='left', suffixes=('_shot', '_reb'))
-        valid_pairs.rename(columns={'x': 'rebound_x', 'y': 'rebound_y'}, inplace=True)
-        valid_pairs.drop(columns=['wcTime'], inplace=True)
+        valid_pairs = valid_pairs.rename(columns={'x': 'rebound_x', 'y': 'rebound_y'})
+        valid_pairs = valid_pairs.drop(columns=['wcTime'])
 
-        # Select and rename relevant columns for the result, including the rebounding teamId
+        # Prepare the final DataFrame
         result_df = valid_pairs[['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'wcTime_shot', 'wcTime_reb', 'teamId_reb', 'basketX']]
         result_df.columns = ['shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_time', 'rebound_time', 'rebound_teamId', 'basket_x']
-
-        # Drop rows where essential coordinates are missing
+        
         return result_df.dropna(subset=['shot_x', 'shot_y', 'rebound_x', 'rebound_y'])
+
 
 
