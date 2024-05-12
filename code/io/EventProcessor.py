@@ -1,6 +1,6 @@
 import pandas as pd
 
-DTYPES = {'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str, 'dReb': pd.BooleanDtype()}
+DTYPES = {'gameId': str, 'teamId': str, 'playerId': str, 'fouledId': str, 'fouled': pd.BooleanDtype(), 'dReb': pd.BooleanDtype()}
 
 class EventProcessor:
     """
