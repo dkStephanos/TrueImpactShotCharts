@@ -472,3 +472,37 @@ class FeatureUtil:
     
     def calculate_brier_score_loss(shot_rebound_df):
         return brier_score_loss(shot_rebound_df['dReb'], shot_rebound_df['def_reb_chance'] / 100)
+
+
+    def calculate_oreb_ppp(event_df, off_rebounds_df):
+        # List to store points from the first shot attempt after each offensive rebound
+        points_after_rebounds = []
+
+        # Iterate over each offensive rebound
+        for idx, rebound in off_rebounds_df.iterrows():
+            # Find subsequent events in the same game and period
+            subsequent_events = event_df.loc[
+                (event_df['gameId'] == rebound['gameId']) &
+                (event_df['period'] == rebound['period']) &
+                (event_df['wcTime'] > rebound['wcTime'])
+            ].sort_values(by='wcTime')
+
+            # Filter to find the first shot attempt
+            first_shot = subsequent_events.loc[subsequent_events['eventType'] == 'SHOT'].head(1)
+            
+            # Check if there is a shot and calculate points
+            if not first_shot.empty:
+                points = 3 if (first_shot.iloc[0]['made'] and first_shot.iloc[0]['three']) else (2 if first_shot.iloc[0]['made'] else 0)
+            else:
+                # No shot was made after the rebound before possession ended
+                points = 0
+            
+            points_after_rebounds.append(points)
+        
+        # Calculate average points per possession
+        if points_after_rebounds:
+            ppp = sum(points_after_rebounds) / len(points_after_rebounds)
+        else:
+            ppp = 0
+        
+        return ppp
