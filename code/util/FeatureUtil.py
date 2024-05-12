@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 from shapely.geometry import Point
-from shapely.affinity import scale
 from code.util.ShotRegionUtil import ShotRegionUtil
+from sklearn.metrics import brier_score_loss
 
 
 class FeatureUtil:
@@ -469,3 +469,6 @@ class FeatureUtil:
         )
         
         return valid_shots
+    
+    def calculate_brier_score_loss(shot_rebound_df):
+        return brier_score_loss(shot_rebound_df['dReb'], shot_rebound_df['def_reb_chance'] / 100)
