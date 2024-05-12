@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 from typing import Tuple
 from matplotlib import animation
 from matplotlib.patches import Circle
+from matplotlib.patches import Polygon as MplPolygon
+from shapely.geometry import Polygon
 from IPython.display import HTML
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from shapely.geometry import Polygon
-from matplotlib.patches import Polygon as MplPolygon
+from sklearn.metrics import roc_curve, auc
 from code.io.TrackingProcessor import TrackingProcessor
 from code.util.FeatureUtil import ShotRegionUtil
 
@@ -597,4 +598,22 @@ class VisUtil:
         plt.title('Hexmap Density Visualization')
         
         # Show the plot
+        plt.show()
+        
+    
+    def plot_auc(y_true, y_pred, title="ROC Curve"):
+        # Compute ROC curve and ROC area
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+        roc_auc = auc(fpr, tpr)
+
+        # Plot ROC curve
+        plt.figure()
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title(title)
+        plt.legend(loc="lower right")
         plt.show()
