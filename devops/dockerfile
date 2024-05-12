@@ -14,8 +14,20 @@ COPY code ./code
 COPY notebooks ./notebooks
 COPY data ./data
 
+# Copy startup script
+COPY devops/00-startup.py /home/jovyan/.ipython/profile_default/startup/
+RUN chmod a+r /home/jovyan/.ipython/profile_default/startup/00-startup.py
+
+# After setting up the directory and copying files, set the permissions
+RUN chown -R jovyan:users /home/jovyan/.ipython
+RUN chmod -R 775 /home/jovyan/.ipython
+ENV IPYTHONDIR=/home/jovyan/.ipython
+
 # Switch back to the non-root user for Jupyter
 USER jovyan
+
+# Change the working directory back to notebooks for JupyterLab
+WORKDIR /usr/src/app/notebooks
 
 # Start command
 CMD ["start.sh", "jupyter", "lab", "--LabApp.token=''", "--ip='0.0.0.0'", "--port=8888", "--allow-root"]
