@@ -1,4 +1,4 @@
-shot_classification
+shot_classification_region_totals:
 CLOSE_RANGE           272
 RIGHT_WING_THREE       99
 LEFT_WING_THREE        83
@@ -9,3 +9,16 @@ RIGHT_CORNER_THREE     45
 RIGHT_ELBOW_MID        40
 LEFT_CORNER_THREE      40
 LEFT_ELBOW_MID         38
+
+
+
+brier_score:
+0.12374228534040953
+
+
+
+oreb_ppp:
+1.1025641025641026
+
+
+
