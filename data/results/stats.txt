@@ -1,24 +1,32 @@
 shot_classification_region_totals:
-CLOSE_RANGE           272
-RIGHT_WING_THREE       99
-LEFT_WING_THREE        83
-CENTER_THREE           80
-LEFT_BASELINE_MID      69
-RIGHT_BASELINE_MID     46
-RIGHT_CORNER_THREE     45
-RIGHT_ELBOW_MID        40
-LEFT_CORNER_THREE      40
-LEFT_ELBOW_MID         38
+    CLOSE_RANGE           272
+    RIGHT_WING_THREE       99
+    LEFT_WING_THREE        83
+    CENTER_THREE           80
+    LEFT_BASELINE_MID      69
+    RIGHT_BASELINE_MID     46
+    RIGHT_CORNER_THREE     45
+    RIGHT_ELBOW_MID        40
+    LEFT_CORNER_THREE      40
+    LEFT_ELBOW_MID         38
 
 
 
 brier_score:
-0.12374228534040953
+    0.12374228534040953
 
 
 
 oreb_ppp:
-1.1025641025641026
+    1.1025641025641026
 
 
-
+ppp_comparison:
+            points_produced	    true_points_produced	true_impact_points_produced
+    mean	1.044433	        1.173136	            1.421114
+    std	    1.187814	        1.188496	            1.220422
+    min	    0.000000	        0.000000	            0.000000
+    25%	    0.000000	        0.000000	            0.122507
+    50%	    0.000000	        1.000000	            1.930969
+    75%	    2.000000	        2.000000	            2.326713
+    max	    3.000000	        4.000000	            4.643162
