@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from tqdm import tqdm
-from scipy.spatial import Voronoi
 from scipy.spatial.distance import euclidean
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 from code.io.TrackingProcessor import TrackingProcessor
+from code.io.EventProcessor import EventProcessor
+from code.util.FeatureUtil import FeatureUtil
 from code.util.VisUtil import VisUtil
+
 
 class StatsUtil:
     def calculate_true_points(df):
@@ -123,6 +124,53 @@ class StatsUtil:
             )
             for i in range(player_range)
         ]
+        
+    def assign_oreb_expected_points_to_shots(true_points_df, reb_chances_df, event_df=None, oreb_ppp=None):
+        """_summary_
+
+        Args:
+            true_points_df (_type_): _description_
+            reb_chances_df (_type_): _description_
+            event_df (_type_, optional):  Used for the full context oreb_ppp arg, can also pass that as a scalar. Defaults to None.
+            oreb_ppp (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
+        # Allows for progress bar on pd.apply
+        tqdm.pandas()
+        
+        if not oreb_ppp and not event_df:
+            # Can't proceed unless one is provided
+            raise Exception('One of oreb_ppp or event_df must be provided!')
+        elif oreb_ppp:
+            # Don't interpret if oreb_ppp provided (might be from another context)
+            pass
+        elif event_df:
+            # Use the full event_df to generate average ppp on shots following orebs
+            off_rebounds_df = EventProcessor.extract_off_rebounds(event_df)
+            oreb_ppp = FeatureUtil.calculate_oreb_ppp(event_df, off_rebounds_df)
+
+        # Apply the function row-wise using apply and pass additional args
+        return true_points_df.apply(StatsUtil.calculate_oreb_expected_points, args=(oreb_ppp, reb_chances_df), axis=1)
+                
+    def calculate_oreb_expected_points(row, oreb_ppp, reb_chances_df):
+        # Fetch the closest rebound chance based on timestamp
+        rebound_chance = reb_chances_df.loc[
+            (reb_chances_df['gameId'] == row['gameId']) & 
+            (reb_chances_df['shot_time'] <= row['wcTime']),  # Assuming rebound happens before shot completion
+            ['off_reb_chance', 'shot_time']
+        ].nlargest(1, 'shot_time')  # Get the closest entry before the shot
+        
+        if not rebound_chance.empty:
+            # Calculate additional points from offensive rebounds
+            row['expected_oreb_points'] = rebound_chance['off_reb_chance'].iloc[0] * oreb_ppp / 100
+        else:
+            row['expected_oreb_points'] = 0
+            
+        row['true_impact_points_produced'] = row['true_points_produced'] + row['expected_oreb_points']
+
+        return row
 
     def calculate_rebound_chances(moment_df, timestamp, moment_basket_x, hexbin_data, hexbin_basket_x):
         """
