@@ -24,7 +24,7 @@ class ActionProcessor:
         tracking_df = tracking_df[tracking_df["teamId"] == "-1"].copy()
 
         # Filter for shots and rebounds
-        shots_df = event_df[event_df['eventType'] == 'SHOT'].copy()
+        shots_df = event_df[(event_df['eventType'] == 'SHOT') & (event_df['fouled'] == False)].copy()
         rebounds_df = event_df[event_df['eventType'] == 'REB'].copy()
 
         # Include outcome and basketX by applying a function to extract data from possession_df based on timestamp
