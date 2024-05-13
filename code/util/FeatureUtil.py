@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from shapely.geometry import Point
+from code.io.PossessionProcessor import PossessionProcessor
 from code.util.ShotRegionUtil import ShotRegionUtil
 from sklearn.metrics import brier_score_loss
 
@@ -20,12 +21,14 @@ class FeatureUtil:
         bool: True if the position is in the specified region, otherwise False.
         """
         point = Point(x if basket_x > 0 else -x, y)
-        
+
         # Use intersects instead of contains to include boundary points
         return region.intersects(point)
 
     def is_in_close_range(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CLOSE_RANGE"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["CLOSE_RANGE"], basket_x
+        )
 
     def is_in_left_corner_three(x, y, basket_x):
         return FeatureUtil.is_in_region(
@@ -36,15 +39,21 @@ class FeatureUtil:
         return FeatureUtil.is_in_region(
             x, y, ShotRegionUtil.regions["RIGHT_CORNER_THREE"], basket_x
         )
-        
+
     def is_in_center_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["CENTER_THREE"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["CENTER_THREE"], basket_x
+        )
 
     def is_in_left_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["LEFT_WING_THREE"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["LEFT_WING_THREE"], basket_x
+        )
 
     def is_in_right_wing_three(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RIGHT_WING_THREE"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["RIGHT_WING_THREE"], basket_x
+        )
 
     def is_in_left_baseline_mid(x, y, basket_x):
         return FeatureUtil.is_in_region(
@@ -57,13 +66,19 @@ class FeatureUtil:
         )
 
     def is_in_left_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["LEFT_ELBOW_MID"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["LEFT_ELBOW_MID"], basket_x
+        )
 
     def is_in_right_elbow_mid(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["RIGHT_ELBOW_MID"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["RIGHT_ELBOW_MID"], basket_x
+        )
 
     def is_beyond_halfcourt(x, y, basket_x):
-        return FeatureUtil.is_in_region(x, y, ShotRegionUtil.regions["BEYOND_HALFCOURT"], basket_x)
+        return FeatureUtil.is_in_region(
+            x, y, ShotRegionUtil.regions["BEYOND_HALFCOURT"], basket_x
+        )
 
     def is_in_paint(x, y):
         """
@@ -407,7 +422,7 @@ class FeatureUtil:
 
         if FeatureUtil.is_in_close_range(x, y, basket_x):
             return "CLOSE_RANGE"
-        
+
         if FeatureUtil.is_in_left_baseline_mid(x, y, basket_x):
             return "LEFT_BASELINE_MID"
         if FeatureUtil.is_in_right_baseline_mid(x, y, basket_x):
@@ -422,7 +437,7 @@ class FeatureUtil:
             return "LEFT_CORNER_THREE"
         if FeatureUtil.is_in_right_corner_three(x, y, basket_x):
             return "RIGHT_CORNER_THREE"
-        
+
         if FeatureUtil.is_in_left_wing_three(x, y, basket_x):
             return "LEFT_WING_THREE"
         if FeatureUtil.is_in_right_wing_three(x, y, basket_x):
@@ -444,35 +459,25 @@ class FeatureUtil:
         Returns:
             DataFrame: The input DataFrame augmented with a new column for shot classification.
         """
-        # Ensure shot_time, wcStart, and wcEnd are properly typed
-        shots_df = shots_df.copy()
-        possession_df = possession_df.copy().drop(columns=['basketX'])
-
         # Create a temporary key for merging to avoid large Cartesian products
-        temp_possession_df = possession_df.copy()
-        temp_possession_df["key"] = 1
-        shots_df["key"] = 1
-
-        # Merge using a key then drop the key to clean up
-        merged_df = pd.merge(shots_df, temp_possession_df, on="key").drop("key", axis=1)
-
-        # Efficiently filter rows within time bounds
-        valid_shots = merged_df[
-            (merged_df["shot_time"] >= merged_df["wcStart"])
-            & (merged_df["shot_time"] <= merged_df["wcEnd"])
-        ].copy()  # Make a copy if you plan to modify this DataFrame to avoid SettingWithCopyWarning
+        shots_df = shots_df.copy()
+        
+        shots_df['basketX'] = shots_df['shot_time'].apply(
+            lambda x: PossessionProcessor.extract_possession_by_timestamp(possession_df, x)['basketX']
+        )
 
         # Apply the classification function
-        valid_shots["shot_classification"] = valid_shots.apply(
-            lambda row: classify_shot(row["shot_x"], row["shot_y"], row["basket_x"]),
+        shots_df["shot_classification"] = shots_df.apply(
+            lambda row: classify_shot(row["shot_x"], row["shot_y"], row["basketX"]),
             axis=1,
         )
-        
-        return valid_shots
-    
-    def calculate_brier_score_loss(shot_rebound_df):
-        return brier_score_loss(shot_rebound_df['dReb'], shot_rebound_df['def_reb_chance'] / 100)
 
+        return shots_df
+
+    def calculate_brier_score_loss(shot_rebound_df):
+        return brier_score_loss(
+            shot_rebound_df["dReb"], shot_rebound_df["def_reb_chance"] / 100
+        )
 
     def calculate_oreb_ppp(event_df, off_rebounds_df):
         # List to store points from the first shot attempt after each offensive rebound
@@ -482,27 +487,33 @@ class FeatureUtil:
         for idx, rebound in off_rebounds_df.iterrows():
             # Find subsequent events in the same game and period
             subsequent_events = event_df.loc[
-                (event_df['gameId'] == rebound['gameId']) &
-                (event_df['period'] == rebound['period']) &
-                (event_df['wcTime'] > rebound['wcTime'])
-            ].sort_values(by='wcTime')
+                (event_df["gameId"] == rebound["gameId"])
+                & (event_df["period"] == rebound["period"])
+                & (event_df["wcTime"] > rebound["wcTime"])
+            ].sort_values(by="wcTime")
 
             # Filter to find the first shot attempt
-            first_shot = subsequent_events.loc[subsequent_events['eventType'] == 'SHOT'].head(1)
-            
+            first_shot = subsequent_events.loc[
+                subsequent_events["eventType"] == "SHOT"
+            ].head(1)
+
             # Check if there is a shot and calculate points
             if not first_shot.empty:
-                points = 3 if (first_shot.iloc[0]['made'] and first_shot.iloc[0]['three']) else (2 if first_shot.iloc[0]['made'] else 0)
+                points = (
+                    3
+                    if (first_shot.iloc[0]["made"] and first_shot.iloc[0]["three"])
+                    else (2 if first_shot.iloc[0]["made"] else 0)
+                )
             else:
                 # No shot was made after the rebound before possession ended
                 points = 0
-            
+
             points_after_rebounds.append(points)
-        
+
         # Calculate average points per possession
         if points_after_rebounds:
             ppp = sum(points_after_rebounds) / len(points_after_rebounds)
         else:
             ppp = 0
-        
+
         return ppp
