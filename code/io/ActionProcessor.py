@@ -23,8 +23,8 @@ class ActionProcessor:
         tracking_df = tracking_df[tracking_df["teamId"] == "-1"].copy()
 
         # Filter for shots and rebounds
-        shots_df = event_df[event_df['eventType'] == 'SHOT'].copy()
-        rebounds_df = event_df[event_df['eventType'] == 'REB'][['gameId', 'period', 'wcTime']].copy()
+        shots_df = event_df[event_df['eventType'] == 'SHOT'].drop(columns=['dReb']).copy()
+        rebounds_df = event_df[event_df['eventType'] == 'REB'][['gameId', 'period', 'wcTime', 'dReb']].copy()
         
         # Merging shots and rebounds on 'gameId' and 'period', then filtering and deduplicating
         merged_df = pd.merge(rebounds_df, shots_df, on=['gameId', 'period'], suffixes=('_reb', '_shot'))
@@ -44,6 +44,15 @@ class ActionProcessor:
 
         # Prepare the final DataFrame
         result_df = valid_pairs.rename(columns={'wcTime_shot': 'shot_time', 'wcTime_reb': 'rebound_time', 'teamId_reb': 'rebound_teamId'})
+        result_df = result_df.dropna(subset=['shot_x', 'shot_y', 'rebound_x', 'rebound_y'])
         
-        return result_df.dropna(subset=['shot_x', 'shot_y', 'rebound_x', 'rebound_y'])
+        # Combine made and missed shot data, ensuring that rebound data for made shots is filled with nulls
+        made_shots = pd.merge(shots_df.loc[shots_df['made'] == True], tracking_df[['gameId', 'wcTime', 'x', 'y']], left_on=['gameId', 'wcTime'], right_on=['gameId', 'wcTime'], how='left', suffixes=('', '_shot'))
+        made_shots = made_shots.rename(columns={'x': 'shot_x', 'y': 'shot_y', 'wcTime': 'shot_time'})
+
+        return pd.concat([
+            made_shots,  # Made shots, already included in shots_with_pos
+            result_df  # Missed shots merged with rebound data
+        ], ignore_index=True)
+        
 
