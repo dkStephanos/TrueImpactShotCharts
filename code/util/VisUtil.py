@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple
 from matplotlib import animation
-from matplotlib.patches import Circle
-from matplotlib.patches import Polygon as MplPolygon
+from matplotlib.patches import Circle, Polygon as MplPolygon
 from shapely.geometry import Polygon
 from IPython.display import HTML
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -547,46 +546,67 @@ class VisUtil:
 
             # Display the plot
             plt.show()
-
-    def plot_topographical_heatmap(shots_df, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced", ax=None):
+            
+                
+    def plot_topographical_heatmap(shots_df, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced", grid_density=100, ax=None):
         """
-        Plot a topographical heatmap based on shot locations and weighted by points potential.
+        Plot a topographical heatmap based on shot locations and weighted by points potential using hexbin aggregation.
         
         Args:
             shots_df (DataFrame): DataFrame containing shot data with coordinates and weights.
             x_col (str): The name of the column in shots_df that contains the x coordinates.
             y_col (str): The name of the column in shots_df that contains the y coordinates.
             weight_col (str): The name of the column in shots_df that contains the weights for the heatmap.
+            grid_density (int): The density of the grid used for interpolation.
             ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
                                                                 If None, creates a new figure and axis.
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
-            VisUtil.setup_court(ax)
         
         # Mirror the court data to ensure all data is on the half-court
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
         
-        # Extract the relevant data
-        x = shots_df[x_col].values
-        y = shots_df[y_col].values
-        z = shots_df[weight_col].values
+        # Create hexbin plot and get the centers and values
+        hb = ax.hexbin(shots_df[x_col], shots_df[y_col], C=shots_df[weight_col], gridsize=int((47 / 1.5) / 2), reduce_C_function=np.mean, mincnt=1)
+        
+        # Extract hexbin data
+        x = hb.get_offsets()[:, 0]
+        y = hb.get_offsets()[:, 1]
+        z = hb.get_array()
+        
+        # Close the hexbin plot figure to avoid displaying it
+        plt.close(fig)
+        fig, ax = plt.subplots(figsize=(12, 11))
         
         # Generate grid data for heatmap
-        xi = np.linspace(min(x), max(x), 100)
-        yi = np.linspace(min(y), max(y), 100)
-        zi = griddata((x, y), z, (xi[None, :], yi[:, None]), method='cubic')
+        xi = np.linspace(0, 47, grid_density)
+        yi = np.linspace(-25, 25, grid_density)
+        xi, yi = np.meshgrid(xi, yi)
         
-        # Plot heatmap
-        c = ax.contourf(xi, yi, zi, levels=100, cmap="coolwarm", alpha=0.75)
+        # Interpolate using griddata
+        zi = griddata((x, y), z, (xi, yi), method='cubic')
+        
+        # Create a mask for the entire half-court area
+        court_mask = (xi >= 0) & (xi <= 47) & (yi >= -25) & (yi <= 25)
+        zi[~court_mask] = 0  # Set areas outside the half-court to a neutral value
+        
+        # Plot heatmap with specified extent
+        levels = np.linspace(np.nanmin(zi), np.nanmax(zi), 200)
+        c = ax.contourf(xi, yi, zi, levels=levels, cmap="seismic", alpha=0.85, extend='both')
         plt.colorbar(c, ax=ax, label=weight_col)
         
-        # Set court limits
-        VisUtil.set_halfcourt(ax)
+        # Add contour lines for better contrast
+        ax.contour(xi, yi, zi, levels=levels, colors='black', linewidths=0.1)
         
-        plt.show()
-
+        # Set court limits explicitly
+        VisUtil.setup_court(ax)
         
+        # Set plot limits to the borders of the contour plot
+        ax.set_xlim(0, 44)
+        ax.set_ylim(-22, 22)
+    
+    plt.show()    
     @staticmethod
     def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
         """
