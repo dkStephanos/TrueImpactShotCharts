@@ -562,6 +562,7 @@ class VisUtil:
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
+            VisUtil.setup_court(ax)
         
         # Mirror the court data to ensure all data is on the half-court
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
