@@ -538,3 +538,27 @@ class FeatureUtil:
         ).reset_index()
 
         return fg_percentage_by_region
+    
+    def calculate_shot_statistics_by_region(shot_data):
+        """
+        Calculate per-shot statistics for points produced, true points produced, and true impact points produced 
+        for each shot classification region.
+
+        Args:
+            shot_data (DataFrame): DataFrame containing shot data with columns 'shot_classification', 
+                                'points_produced', 'true_points_produced', and 'true_impact_points_produced'.
+
+        Returns:
+            DataFrame: DataFrame with per-shot statistics for each shot classification region.
+        """
+        # Group by shot classification and calculate statistics
+        shot_statistics_by_region = shot_data.groupby('shot_classification').apply(
+            lambda x: pd.Series({
+                'shots_attempted': len(x),
+                'points_produced_avg': x['points_produced'].mean(),
+                'true_points_produced_avg': x['true_points_produced'].mean(),
+                'true_impact_points_produced_avg': x['true_impact_points_produced'].mean(),
+            })
+        ).reset_index()
+
+        return shot_statistics_by_region
