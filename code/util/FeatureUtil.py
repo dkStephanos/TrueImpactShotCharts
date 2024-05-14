@@ -562,3 +562,23 @@ class FeatureUtil:
         ).reset_index()
 
         return shot_statistics_by_region
+    
+    def calculate_net_gains(shot_statistics_by_region):
+        """
+        Calculate the net gains for true points produced and points produced based on true impact points produced.
+
+        Args:
+            shot_statistics_by_region (DataFrame): DataFrame containing per-shot statistics for each shot classification region.
+
+        Returns:
+            DataFrame: DataFrame with net gains for each shot classification region.
+        """
+        shot_statistics_by_region = shot_statistics_by_region.copy()
+        shot_statistics_by_region['net_gain_true_points'] = (
+            shot_statistics_by_region['true_points_produced_avg'] - shot_statistics_by_region['points_produced_avg']
+        )
+        shot_statistics_by_region['net_gain_true_impact_points'] = (
+            shot_statistics_by_region['true_impact_points_produced_avg'] - shot_statistics_by_region['points_produced_avg']
+        )
+
+        return shot_statistics_by_region
