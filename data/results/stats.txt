@@ -11,6 +11,17 @@ shot_classification_region_totals:
     LEFT_ELBOW_MID         38
 
 
+off/def reb summaries:
+            off_reb_chance	def_reb_chance
+    count	813.000000	    813.000000
+    mean	21.781024	    67.669444
+    std	    17.084626	    27.867221
+    min	    0.997506	    1.515152
+    25%	    6.733167	    49.750000
+    50%	    18.703242	    75.689223
+    75%	    33.250000	    91.979950
+    max	    77.889447	    99.002494
+
 
 brier_score:
     0.12374228534040953
