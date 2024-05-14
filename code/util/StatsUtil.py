@@ -194,11 +194,10 @@ class StatsUtil:
         if moment_basket_x != hexbin_basket_x:
             moment_df = TrackingProcessor.mirror_court_data(moment_df, 'x', 'y', hexbin_basket_x)
         vis = VisUtil(moment_df)
-        team_regions = vis.plot_voronoi_at_timestamp(timestamp, hexbin_basket_x, return_data=True)
+        player_regions = vis.plot_voronoi_at_timestamp(timestamp, hexbin_basket_x, return_data=True)
 
         # Map team IDs to Voronoi polygons
         player_teams = dict(zip(player_info['playerId'], player_info['teamId']))
-        player_regions = {player_id: team_regions[team_id] for player_id, team_id in player_teams.items() if team_id in team_regions}
 
         # Initialize dictionaries to store rebound potentials
         player_rebound_potentials = {player_id: 0 for player_id in player_regions}

@@ -407,11 +407,11 @@ class VisUtil:
             self.setup_visualization(moments_df)  # Setup the court visualization based on the current moments dataframe
 
         ball_data = moments_df[moments_df["teamId"] == "-1"].iloc[0] if not moments_df[moments_df["teamId"] == "-1"].empty else None
-        player_data = moments_df[moments_df["teamId"] != "-1"][["x", "y", "teamId"]].values
+        player_data = moments_df[moments_df["teamId"] != "-1"][["playerId", "x", "y", "teamId"]].values
 
         # Define artificial boundary points at the edges of the court
         boundary_points = np.array([[-47, -25], [-47, 25], [47, -25], [47, 25]])
-        all_points = np.vstack([player_data[:, :2], boundary_points])
+        all_points = np.vstack([player_data[:, 1:3], boundary_points])
 
         vor = Voronoi(all_points)
 
@@ -424,7 +424,7 @@ class VisUtil:
         if not return_data:
             voronoi_plot_2d(vor, ax=self.ax, show_vertices=False, show_points=False, line_colors="orange", line_width=2, line_alpha=0.6)
 
-        team_regions = {}
+        player_regions = {}
         for point_index, region_index in enumerate(vor.point_region):
             region = vor.regions[region_index]
             if all(v >= 0 for v in region) and region:  # Ensure the region is bounded
@@ -434,9 +434,10 @@ class VisUtil:
                     clipped_polygon = polygon.intersection(half_court_bounds)  # Clip to court bounds
                     if not clipped_polygon.is_empty:
                         if point_index < len(player_data):  # Check if index is within the range of player_data
-                            team_id = str(player_data[point_index][2])
+                            player_id = str(player_data[point_index][0])
+                            team_id = str(player_data[point_index][3])
                             if return_data:
-                                team_regions[team_id] = clipped_polygon
+                                player_regions[player_id] = clipped_polygon
                             else:
                                 team_color = self.TEAM_COLOR_DICT.get(team_id, '#808080')[0]
                                 patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
@@ -444,9 +445,8 @@ class VisUtil:
                         else:
                             continue  # Skip boundary points which do not correspond to any player
 
-
         if return_data:
-            return team_regions
+            return player_regions
         else:
             # Set plot limits to the appropriate half-court dimensions
             self.ax.set_xlim([0, 47] if basket_x > 0 else [-47, 0])
@@ -566,8 +566,8 @@ class VisUtil:
 
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
 
-        made_shots = shots_df[shots_df['outcome'] == 'FGM']
-        missed_shots = shots_df[shots_df['outcome'] == 'FGX']
+        made_shots = shots_df[shots_df['made'] == True]
+        missed_shots = shots_df[shots_df['made'] == False]
 
         ax.scatter(made_shots[x_col], made_shots[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Field Goal Made (FGM)')
         ax.scatter(missed_shots[x_col], missed_shots[y_col], c='red', marker='x', s=50, alpha=0.75, label='Field Goal Missed (FGX)')
