@@ -517,3 +517,24 @@ class FeatureUtil:
             ppp = 0
 
         return ppp
+
+    def calculate_fg_percentage_by_region(shot_data):
+        """
+        Calculate the field goal percentage (FG%) for each shot classification region.
+
+        Args:
+            shot_data (DataFrame): DataFrame containing shot data with columns 'shot_classification' and 'made'.
+
+        Returns:
+            DataFrame: DataFrame with FG% for each shot classification region.
+        """
+        # Group by shot classification and calculate the FG%
+        fg_percentage_by_region = shot_data.groupby('shot_classification').apply(
+            lambda x: pd.Series({
+                'shots_attempted': len(x),
+                'shots_made': x['made'].sum(),
+                'fg_percentage': x['made'].mean() * 100
+            })
+        ).reset_index()
+
+        return fg_percentage_by_region
