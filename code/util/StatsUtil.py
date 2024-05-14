@@ -59,6 +59,16 @@ class StatsUtil:
 
         return shots_df
 
+    def map_shot_data_to_true_points(true_points_df, shot_classification_df):
+        shot_classification_df = shot_classification_df.rename(columns={"shot_time": "wcTime"})
+        merged_df = true_points_df.merge(
+            shot_classification_df[['gameId', 'playerId', 'wcTime', 'shot_x', 'shot_y', 'rebound_x', 'rebound_y', 'shot_classification']],
+            on=['gameId', 'playerId', 'wcTime'],
+            how='left'
+        )
+        return merged_df.dropna(subset=["shot_classification"])
+
+
     def travel_dist_all(event_df):
         """
         Calculate the total distance traveled by all players in an event DataFrame.
