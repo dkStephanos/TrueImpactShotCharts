@@ -79,7 +79,7 @@ class ActionProcessor:
             }
         )
         result_df = result_df.dropna(
-            subset=["shot_x", "shot_y", "rebound_x", "rebound_y"]
+            subset=["shot_x", "shot_y"]
         )
 
         # Combine made and missed shot data, ensuring that rebound data for made shots is filled with nulls
