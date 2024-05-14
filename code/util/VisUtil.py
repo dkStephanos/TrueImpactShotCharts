@@ -10,6 +10,7 @@ from shapely.geometry import Polygon
 from IPython.display import HTML
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.metrics import roc_curve, auc
+from scipy.interpolate import griddata
 from code.io.TrackingProcessor import TrackingProcessor
 from code.util.FeatureUtil import ShotRegionUtil
 
@@ -546,6 +547,43 @@ class VisUtil:
 
             # Display the plot
             plt.show()
+
+    def plot_topographical_heatmap(shots_df, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced", ax=None):
+        """
+        Plot a topographical heatmap based on shot locations and weighted by points potential.
+        
+        Args:
+            shots_df (DataFrame): DataFrame containing shot data with coordinates and weights.
+            x_col (str): The name of the column in shots_df that contains the x coordinates.
+            y_col (str): The name of the column in shots_df that contains the y coordinates.
+            weight_col (str): The name of the column in shots_df that contains the weights for the heatmap.
+            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
+                                                                If None, creates a new figure and axis.
+        """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(12, 11))
+        
+        # Mirror the court data to ensure all data is on the half-court
+        shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
+        
+        # Extract the relevant data
+        x = shots_df[x_col].values
+        y = shots_df[y_col].values
+        z = shots_df[weight_col].values
+        
+        # Generate grid data for heatmap
+        xi = np.linspace(min(x), max(x), 100)
+        yi = np.linspace(min(y), max(y), 100)
+        zi = griddata((x, y), z, (xi[None, :], yi[:, None]), method='cubic')
+        
+        # Plot heatmap
+        c = ax.contourf(xi, yi, zi, levels=100, cmap="coolwarm", alpha=0.75)
+        plt.colorbar(c, ax=ax, label=weight_col)
+        
+        # Set court limits
+        VisUtil.set_halfcourt(ax)
+        
+        plt.show()
 
         
     @staticmethod
