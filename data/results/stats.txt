@@ -24,7 +24,7 @@ off/def reb summaries:
 
 
 brier_score:
-    0.12374228534040953
+    0.0765938435087307
 
 
 
