@@ -41,3 +41,17 @@ ppp_comparison:
     50%	    0.000000	        1.000000	            2.000000
     75%	    2.000000	        2.000000	            2.000000
     max	    3.000000	        4.000000	            4.000000
+
+shot_region_fg%:
+        shot_classification	shots_attempted	shots_made	fg_percentage
+    0	BEYOND_HALFCOURT	4.0	0.0	        0.0         0.0
+    1	CENTER_THREE	    143.0	        50.0	    34.965035
+    2	CLOSE_RANGE	        829.0	        483.0	    58.262967
+    3	LEFT_BASELINE_MID	137.0	        53.0	    38.686131
+    4	LEFT_CORNER_THREE	84.0	        38.0	    45.238095
+    5	LEFT_ELBOW_MID	    70.0	        26.0	    37.142857
+    6	LEFT_WING_THREE	    145.0	        54.0	    37.241379
+    7	RIGHT_BASELINE_MID	108.0	        55.0	    50.925926
+    8	RIGHT_CORNER_THREE	89.0	        38.0	    42.696629
+    9	RIGHT_ELBOW_MID	    88.0	        36.0	    40.909091
+    10	RIGHT_WING_THREE	179.0	        66.0	    36.871508
