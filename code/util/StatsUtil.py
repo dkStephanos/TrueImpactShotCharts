@@ -155,6 +155,11 @@ class StatsUtil:
         return true_points_df.apply(StatsUtil.calculate_oreb_expected_points, args=(oreb_ppp, reb_chances_df), axis=1)
                 
     def calculate_oreb_expected_points(row, oreb_ppp, reb_chances_df):
+        if row['made']:
+            row['expected_oreb_points'] = 0
+            row['true_impact_points_produced'] = row['true_points_produced']
+            return row
+            
         # Fetch the closest rebound chance based on timestamp
         rebound_chance = reb_chances_df.loc[
             (reb_chances_df['gameId'] == row['gameId']) & 
