@@ -17,7 +17,10 @@ import pandas as pd
 import numpy as np
 
 
-plt.rcParams['animation.ffmpeg_path'] = r'C:\FFmpeg\bin\ffmpeg.exe'
+# Verify ffmpeg path and set it for matplotlib
+ffmpeg_path = '/usr/bin/ffmpeg'
+plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
+plt.rcParams['animation.writer'] = 'ffmpeg'
 
 # Print a message to confirm the script has run
 print("Default imports loaded.")
