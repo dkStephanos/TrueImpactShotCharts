@@ -83,7 +83,7 @@ class VisUtil:
         )
 
         players_df = pd.read_csv(
-            "../data/src/basic_player_info.csv",
+            "data/src/basic_player_info.csv",
             dtype={"person_id": str, "jersey_num": str},
         )
         self.players_dict = {
@@ -102,7 +102,7 @@ class VisUtil:
         
     @staticmethod
     def load_court_image():
-        return plt.imread("../data/img/app/fullcourt.png")
+        return plt.imread("data/img/app/fullcourt.png")
     
     def setup_visualization(self, moments_df):
         VisUtil.setup_court(self.ax)
