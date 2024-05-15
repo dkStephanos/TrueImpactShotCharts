@@ -606,7 +606,8 @@ class VisUtil:
         ax.set_xlim(8, 44)
         ax.set_ylim(-22, 22)
     
-    plt.show()    
+        plt.show()    
+        
     @staticmethod
     def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
         """
