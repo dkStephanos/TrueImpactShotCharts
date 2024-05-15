@@ -563,6 +563,32 @@ class FeatureUtil:
 
         return shot_statistics_by_region
     
+    def calculate_rebound_statistics_by_region(rebound_data):
+        """
+        Calculate rebound statistics for each shot classification region, including the percentage of real defensive rebounds,
+        as well as the projected offensive and defensive rebound chances.
+
+        Args:
+            rebound_data (DataFrame): DataFrame containing rebound data with columns 'shot_classification',
+                                    'off_reb_chance', 'def_reb_chance', and 'dReb' (boolean indicating defensive rebound).
+
+        Returns:
+            DataFrame: DataFrame with rebound statistics for each shot classification region.
+        """
+        # Group by shot classification and calculate statistics
+        rebound_statistics_by_region = rebound_data.groupby('shot_classification').apply(
+            lambda x: pd.Series({
+                'shots_attempted': len(x),
+                'off_reb_chance_avg': x['off_reb_chance'].mean(),
+                'def_reb_chance_avg': x['def_reb_chance'].mean(),
+                'off_rebounds_percent_real': (1 - x['dReb']).mean() * 100,
+                'def_rebounds_percent_real': x['dReb'].mean() * 100
+            })
+        ).reset_index()
+
+        return rebound_statistics_by_region
+
+    
     def calculate_net_gains(shot_statistics_by_region):
         """
         Calculate the net gains for true points produced and points produced based on true impact points produced.
