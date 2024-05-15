@@ -1,6 +1,8 @@
 # TrueImpactShotCharts
 Integrating Rebounds and Transition Dynamics into NBA True Shot Value Analysis
 
+![image](https://github.com/dkStephanos/TrueImpactShotCharts/blob/master/backend/static/app/content/header.webp)
+
 
 
 Data Preparation:
