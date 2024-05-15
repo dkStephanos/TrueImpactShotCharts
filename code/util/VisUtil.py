@@ -102,7 +102,7 @@ class VisUtil:
         
     @staticmethod
     def load_court_image():
-        return plt.imread("../data/img/fullcourt.png")
+        return plt.imread("../data/img/app/fullcourt.png")
     
     def setup_visualization(self, moments_df):
         VisUtil.setup_court(self.ax)
