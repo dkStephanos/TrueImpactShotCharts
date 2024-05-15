@@ -7,6 +7,11 @@ WORKDIR /usr/src/app
 # Install dependencies
 COPY devops/requirements.txt ./
 USER root
+
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 # Copy code, notebooks, and data into the container
