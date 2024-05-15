@@ -593,7 +593,7 @@ class VisUtil:
         
         # Plot heatmap with specified extent
         levels = np.linspace(np.nanmin(zi), np.nanmax(zi), 200)
-        c = ax.contourf(xi, yi, zi, levels=levels, cmap="seismic", alpha=0.85, extend='both')
+        c = ax.contourf(xi, yi, zi, levels=levels, cmap="seismic", alpha=0.65, extend='both')
         plt.colorbar(c, ax=ax, label=weight_col)
         
         # Add contour lines for better contrast
@@ -603,7 +603,7 @@ class VisUtil:
         VisUtil.setup_court(ax)
         
         # Set plot limits to the borders of the contour plot
-        ax.set_xlim(0, 44)
+        ax.set_xlim(8, 44)
         ax.set_ylim(-22, 22)
     
     plt.show()    
