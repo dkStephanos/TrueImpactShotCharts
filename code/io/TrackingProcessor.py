@@ -18,11 +18,11 @@ class TrackingProcessor:
         gameDate
     """
     def load_game(game_id):
-        tracking_df = pd.read_csv('../data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
+        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         return tracking_df.loc[tracking_df['gameId'] == game_id].reset_index(drop=True)
     
     def load_games(game_ids: list = "all"):
-        tracking_df = pd.read_csv('../data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
+        tracking_df = pd.read_csv('data/src/tracking.csv', dtype={'gameId': str, 'playerId': str, 'teamId': str})
         if game_ids != "all":
             tracking_df = tracking_df.loc[tracking_df['gameId'].isin(game_ids)].reset_index(drop=True)
         
