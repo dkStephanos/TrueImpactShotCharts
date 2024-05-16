@@ -4,34 +4,109 @@ Integrating Rebounds and Transition Dynamics into NBA True Shot Value Analysis
 ![image](https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/app/readme.webp)
 
 
+## Overview
 
-Data Preparation:
+TrueImpactShotCharts is a basketball analytics project focused on creating advanced shot charts that incorporate true impact metrics. The project aims to provide a comprehensive analysis of shot selection, efficiency, and impact by leveraging various data visualization techniques, including topographical heatmaps and hexbin aggregation.
 
-Parse Raw Data: Begin by organizing the raw tracking and play-by-play data. Ensure you understand the structure and the type of information available.
-Integration with Play-by-Play Data (Optional): Decide whether to integrate play-by-play data for deeper insights or use online stats as constants for PPP in transition and off-rebounds.
+## Table of Contents
 
-Feature Generation:
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Data Sources](#data-sources)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
-Transition Defense Indicator: Develop a method to assess whether the defense has successfully transitioned based on missed field goals and shot locations.
-    -> This will be the 'zone of death' metric, essentially checking if the 2 lead defenders cross halfcourt before the ball crosses the 3pt line
-Offensive Rebound Percentage: Calculate the offensive rebound percentage by shot location using the geometric model approach.
+## Features
 
-Constructing the Shot Chart:
+- **True Impact Shot Charts**: Generate detailed shot charts that incorporate true impact metrics.
+- **Topographical Heatmaps**: Visualize shot data using topographical heatmaps for better insights.
+- **Hexbin Aggregation**: Use hexbin aggregation to smooth out data and create more informative visualizations.
+- **Rebound Statistics**: Calculate and visualize rebound statistics, including offensive and defensive rebound chances.
 
-Adapt the Sloan Paper Method: Utilize the code from the Sloan paper to generate a shot chart that accounts for free throw percentages. Adapt this code as necessary to fit your dataset.
-Incorporate Shot Location Efficiency: Include calculations for expected PPP based on shot locations, transition defense effectiveness, and offensive rebound potential.
+## Installation
 
-Augmented Shot Chart Creation:
+To install and run this project locally, follow these steps:
 
-Combine Features into PPP Metric: Layer together the generated features (transition defense, off-reb%, FT%) to create a comprehensive PPP metric for each shot location.
-Visualization: Develop a visualization method for your augmented shot chart, highlighting the areas of the court with the highest and lowest expected PPP.
+1. **Clone the repository**:
+    ```sh
+    git clone https://github.com/yourusername/TrueImpactShotCharts.git
+    cd TrueImpactShotCharts
+    ```
 
-Analysis and Validation:
+2. **Build the Docker container**:
+    ```sh
+    docker build -t trueimpactshotcharts .
+    ```
 
-Team and Player Analysis: Apply your metric to team and player data to identify patterns, strengths, and weaknesses.
-Validation: Compare your findings against known strategies and outcomes to validate the accuracy and usefulness of your metric.
+3. **Run the Docker container**:
+    ```sh
+    docker run -p 8888:8888 trueimpactshotcharts
+    ```
 
-Documentation and Presentation:
+## Usage
 
-Document Assumptions and Methodology: Clearly document any assumptions made and provide a detailed explanation of your methodology for reproducibility.
-Prepare a Presentation: Summarize your findings and methodology in a presentation format, highlighting key insights and potential applications of your metric.
+### Setting Up the Environment
+
+1. **Set up the working directory**:
+    ```python
+    import os
+    os.chdir('/path/to/TrueImpactShotCharts')
+    ```
+
+2. **Load and visualize shot data**:
+    ```python
+    import pandas as pd
+    from code.util.VisUtil import VisUtil
+    from code.util.FeatureUtil import FeatureUtil
+
+    # Load the data
+    data_file_path = os.path.join('data', 'src', 'events.csv')
+    shot_data = pd.read_csv(data_file_path)
+
+    # Generate and display a topographical heatmap
+    VisUtil.plot_topographical_heatmap_hexbin(shot_data, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced")
+    ```
+
+### Rebound Statistics
+
+1. **Calculate and display rebound statistics**:
+    ```python
+    from code.util.StatsUtil import StatsUtil
+
+    # Calculate rebound statistics
+    rebound_stats = StatsUtil.calculate_rebound_statistics_by_region(shot_data)
+    print(rebound_stats)
+    ```
+
+## Data Sources
+
+This project leverages data from various sources:
+
+- [Estimating NBA Team Shot Selection Efficiency from Aggregations of True Continuous Shot Charts](https://www.sloansportsconference.com/research-papers/estimating-nba-team-shot-selection-efficiency-from-aggregations-of-true-continuous-shot-charts-a-generalized-additive-model-approach)
+- [A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes](http://www.lukebornn.com/papers/cervone_ssac_2016.pdf)
+- [Offensive Crashing: Using Data to Understand and Optimize Offensive Rebounding](https://squared2020.com/2019/11/18/offensive-crashing/)
+- [Extending Possessions: A Geometric Distribution Approach to Basketball Possessions](https://squared2020.com/2019/11/27/extending-possessions-geometric-distribution/)
+
+## Contributing
+
+We welcome contributions to enhance this project. To contribute, please follow these steps:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bugfix.
+3. Commit your changes and push the branch to your forked repository.
+4. Create a pull request with a detailed description of your changes.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+We would like to thank the following sources for their invaluable contributions to the field of basketball analytics:
+
+- Sloan Sports Analytics Conference
+- Luke Bornn and his co-authors
+- Squared2020
