@@ -76,20 +76,20 @@ anim.display_animation(possession_df.loc[possession_df["outcome"] == "FGM"].iloc
   <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/animation.gif" alt="Animation Example" />
 </p>
 
-### Voroni Diagram Example
+### Voronoi Diagram Example
 
 ```python
 # Extract an individual shot attempt as an example
 possession = shot_rebound_classified_df.iloc[-2]
 moment_df = TrackingProcessor.extract_moment_from_timestamps(tracking_df, possession['shot_time'], possession['rebound_time'])
 
-# Instantiate the VisUtil and plot the Voroni diagram at shot_time, cells are color coded according to the team that 'owns' them
+# Instantiate the VisUtil and plot the Voronoi diagram at shot_time, cells are color coded according to the team that 'owns' them
 anim = VisUtil(moment_df)
 anim.plot_voronoi_at_timestamp(possession['shot_time'], possession["basketX"])
 ```
 
 <p align="center">
-  <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/voronoi.png" alt="Voroni Diagram Example" />
+  <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/voronoi.png" alt="Voronoi Diagram Example" />
 </p>
 
 ### Continuous Shot Chart Example
