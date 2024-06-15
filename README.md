@@ -83,12 +83,8 @@ To install and run this project locally, follow these steps:
 
 ## Data Sources
 
-This project leverages data from various sources:
-
-- [Estimating NBA Team Shot Selection Efficiency from Aggregations of True Continuous Shot Charts](https://www.sloansportsconference.com/research-papers/estimating-nba-team-shot-selection-efficiency-from-aggregations-of-true-continuous-shot-charts-a-generalized-additive-model-approach)
-- [A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes](http://www.lukebornn.com/papers/cervone_ssac_2016.pdf)
-- [Offensive Crashing: Using Data to Understand and Optimize Offensive Rebounding](https://squared2020.com/2019/11/18/offensive-crashing/)
-- [Extending Possessions: A Geometric Distribution Approach to Basketball Possessions](https://squared2020.com/2019/11/27/extending-possessions-geometric-distribution/)
+This project leverages play-by-play and tracking data from the 2023-24 NBA Regular Season. 
+To comply with confidentiality, the original source data can not be shared on this repo.
 
 ## Contributing
 
@@ -105,8 +101,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgements
 
-We would like to thank the following sources for their invaluable contributions to the field of basketball analytics:
+We would like to thank the following sources for their invaluable contributions to the field of basketball analytics, and inspiring this project:
 
-- Sloan Sports Analytics Conference
-- Luke Bornn and his co-authors
-- Squared2020
+- [Estimating NBA Team Shot Selection Efficiency from Aggregations of True Continuous Shot Charts](https://www.sloansportsconference.com/research-papers/estimating-nba-team-shot-selection-efficiency-from-aggregations-of-true-continuous-shot-charts-a-generalized-additive-model-approach)
+- [A Multiresolution Stochastic Process Model for Predicting Basketball Possession Outcomes](http://www.lukebornn.com/papers/cervone_ssac_2016.pdf)
+- [Offensive Crashing: Using Data to Understand and Optimize Offensive Rebounding](https://squared2020.com/2019/11/18/offensive-crashing/)
+- [Extending Possessions: A Geometric Distribution Approach to Basketball Possessions](https://squared2020.com/2019/11/27/extending-possessions-geometric-distribution/)
