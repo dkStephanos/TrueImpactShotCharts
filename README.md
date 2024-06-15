@@ -48,6 +48,14 @@ To install and run this project locally, follow these steps:
 
 ## Usage
 
+TrueImpactShotCharts is organized into several directories and modules to help you explore and analyze NBA tracking data efficiently. The main components include:
+
+- `code/`: Contains all the utility classes and functions for processing and visualizing the data.
+- `notebooks/`: Jupyter notebooks with step-by-step walkthroughs of the data processing, feature generation, and visualization.
+- `data/`: Contains the source data files used in the analysis.
+
+To get started, follow the examples below to see how you can leverage these utilities in your own analysis. For more comprehensive examples and interactive exploration, refer to the notebooks in the `notebooks/` directory.
+
 ### Extract and Visualize Data
 
 ```python
@@ -100,6 +108,8 @@ VisUtil.plot_topographical_heatmap(true_impact_points_df, weight_col="true_point
 <p align="center">
   <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/shot_charts/true_impact_points.png" alt="Continuous Shot Chart Example" />
 </p>
+
+For more examples and detailed explanations, please refer to the notebooks in the notebooks/ directory. These notebooks provide a step-by-step guide to using the utilities and exploring the data comprehensively.
 
 ## Data Sources
 
