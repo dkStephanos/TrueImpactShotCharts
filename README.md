@@ -64,9 +64,42 @@ anim = VisUtil(tracking_df)
 anim.display_animation(possession_df.loc[possession_df["outcome"] == "FGM"].iloc[0])
 ```
 
-<video width="600" controls>
-  <source src="[path/to/your/video.mp4](https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/animation.mp4)" type="video/mp4">
-</video>
+<p align="center">
+  <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/animation.gif" alt="Animation Example" />
+</p>
+
+### Voroni Diagram Example
+
+```python
+# Extract an individual shot attempt as an example
+possession = shot_rebound_classified_df.iloc[-2]
+moment_df = TrackingProcessor.extract_moment_from_timestamps(tracking_df, possession['shot_time'], possession['rebound_time'])
+
+# Instantiate the VisUtil and plot the Voroni diagram at shot_time, cells are color coded according to the team that 'owns' them
+anim = VisUtil(moment_df)
+anim.plot_voronoi_at_timestamp(possession['shot_time'], possession["basketX"])
+```
+
+<p align="center">
+  <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/voronoi.png" alt="Voroni Diagram Example" />
+</p>
+
+### Continuous Shot Chart Example
+
+```python
+# Plot topographical heatmap using true impact points produced
+VisUtil.plot_topographical_heatmap(true_impact_points_df, weight_col="true_impact_points_produced")
+
+# Plot topographical heatmap using points produced
+VisUtil.plot_topographical_heatmap(true_impact_points_df, weight_col="points_produced")
+
+# Plot topographical heatmap using true points produced
+VisUtil.plot_topographical_heatmap(true_impact_points_df, weight_col="true_points_produced")
+```
+
+<p align="center">
+  <img src="https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/shot_charts/true_impact_points.png" alt="Continuous Shot Chart Example" />
+</p>
 
 ## Data Sources
 
