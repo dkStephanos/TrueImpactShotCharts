@@ -48,38 +48,24 @@ To install and run this project locally, follow these steps:
 
 ## Usage
 
-### Setting Up the Environment
+### Extract and Visualize Data
 
-1. **Set up the working directory**:
-    ```python
-    import os
-    os.chdir('/path/to/TrueImpactShotCharts')
-    ```
+```python
+# Change this to any valid gameId in the source data
+GAME_ID = "0022300869"
 
-2. **Load and visualize shot data**:
-    ```python
-    import pandas as pd
-    from code.util.VisUtil import VisUtil
-    from code.util.FeatureUtil import FeatureUtil
+# Each source file has a dedicated processor class, use these to load and process src data
+event_df = EventProcessor.load_game(GAME_ID)
+tracking_df = TrackingProcessor.load_game(GAME_ID)
+possession_df = PossessionProcessor.load_game(GAME_ID)
 
-    # Load the data
-    data_file_path = os.path.join('data', 'src', 'events.csv')
-    shot_data = pd.read_csv(data_file_path)
+# Begin by extracting and visualizing some data
+anim = VisUtil(tracking_df)
+anim.display_animation(possession_df.loc[possession_df["outcome"] == "FGM"].iloc[0])
+```
 
-    # Generate and display a topographical heatmap
-    VisUtil.plot_topographical_heatmap_hexbin(shot_data, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced")
-    ```
+![image](https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/animation.mp4)
 
-### Rebound Statistics
-
-1. **Calculate and display rebound statistics**:
-    ```python
-    from code.util.StatsUtil import StatsUtil
-
-    # Calculate rebound statistics
-    rebound_stats = StatsUtil.calculate_rebound_statistics_by_region(shot_data)
-    print(rebound_stats)
-    ```
 
 ## Data Sources
 
