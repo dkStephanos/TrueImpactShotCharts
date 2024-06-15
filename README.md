@@ -64,8 +64,9 @@ anim = VisUtil(tracking_df)
 anim.display_animation(possession_df.loc[possession_df["outcome"] == "FGM"].iloc[0])
 ```
 
-![image](https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/animation.mp4)
-
+<video width="600" controls>
+  <source src="[path/to/your/video.mp4](https://github.com/dkStephanos/TrueImpactShotCharts/blob/main/data/img/animation.mp4)" type="video/mp4">
+</video>
 
 ## Data Sources
 
