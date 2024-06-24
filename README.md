@@ -28,23 +28,11 @@ TrueImpactShotCharts is a basketball analytics project focused on creating advan
 
 ## Installation
 
-To install and run this project locally, follow these steps:
-
-1. **Clone the repository**:
-    ```sh
-    git clone https://github.com/yourusername/TrueImpactShotCharts.git
-    cd TrueImpactShotCharts
-    ```
-
-2. **Build the Docker container**:
-    ```sh
-    docker build -t trueimpactshotcharts .
-    ```
-
-3. **Run the Docker container**:
-    ```sh
-    docker run -p 8888:8888 trueimpactshotcharts
-    ```
+```bash
+git clone https://github.com/dkStephanos/TrueImpactShotCharts
+cd TrueImpactShotCharts
+docker-compose up
+```
 
 ## Usage
 
