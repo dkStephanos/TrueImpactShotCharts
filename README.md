@@ -36,7 +36,7 @@ TrueImpactShotCharts is a basketball analytics project focused on creating advan
 ```bash
 git clone https://github.com/dkStephanos/TrueImpactShotCharts
 cd TrueImpactShotCharts/devops
-docker-compose up
+docker-compose -f devops/docker-compose.yml up -d
 ```
 
 ## Usage
