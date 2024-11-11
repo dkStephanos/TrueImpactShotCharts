@@ -239,7 +239,7 @@ class StatsUtil:
         return rebound_chances, team_rebound_chances
 
         
-    def _calculate_rebound_for_row(row, tracking_df, hexbin_region_data, hexbin_basket_x, shot_region_specific=False):
+    def _calculate_team_rebound_chances_for_row(row, tracking_df, hexbin_region_data, hexbin_basket_x, shot_region_specific=False):
         if row['made'] == True:
             # If the shot was made, just return NA
             return pd.NA, pd.NA
@@ -266,7 +266,7 @@ class StatsUtil:
         hexbin_basket_x = 41.75 if hexbin_region_data['x'].sum() > 0 else -41.75
         
         # Apply the function row-wise using apply and pass additional args
-        result = shot_rebound_df.progress_apply(StatsUtil._calculate_rebound_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data, hexbin_basket_x))
+        result = shot_rebound_df.progress_apply(StatsUtil._calculate_team_rebound_chances_for_row, axis=1, result_type='expand', args=(tracking_df, hexbin_region_data, hexbin_basket_x))
         
         # Assign results to new columns in the DataFrame
         shot_rebound_df.loc[:, 'off_reb_chance'] = result[0]
