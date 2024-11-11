@@ -10,14 +10,19 @@ TrueImpactShotCharts is a basketball analytics project focused on creating advan
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Data Sources](#data-sources)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+- [TrueImpactShotCharts](#trueimpactshotcharts)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Extract and Visualize Data](#extract-and-visualize-data)
+    - [Voronoi Diagram Example](#voronoi-diagram-example)
+    - [Continuous Shot Chart Example](#continuous-shot-chart-example)
+  - [Data Sources](#data-sources)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Acknowledgements](#acknowledgements)
 
 ## Features
 
@@ -30,7 +35,7 @@ TrueImpactShotCharts is a basketball analytics project focused on creating advan
 
 ```bash
 git clone https://github.com/dkStephanos/TrueImpactShotCharts
-cd TrueImpactShotCharts
+cd TrueImpactShotCharts/devops
 docker-compose up
 ```
 
