@@ -81,6 +81,7 @@ class TrackingProcessor:
             DataFrame: A DataFrame with the specified coordinates mirrored onto the desired half of the court.
         """
         # Mirror the x-coordinates based on whether they match the specified basket_x
+        tracking_df = tracking_df.copy()
         if "basket_x" in tracking_df.columns:
             tracking_df.loc[:, x_col_name] = tracking_df.apply(
                 lambda row: -row[x_col_name] if row["basket_x"] != basket_x else row[x_col_name],
