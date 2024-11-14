@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from typing import Tuple
 from matplotlib import animation
 from matplotlib.patches import Circle, Polygon as MplPolygon
+from matplotlib.colors import LinearSegmentedColormap
 from shapely.geometry import Polygon
 from IPython.display import HTML
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -12,7 +13,6 @@ from sklearn.metrics import roc_curve, auc
 from scipy.interpolate import griddata
 from code.io.TrackingProcessor import TrackingProcessor
 from code.util.FeatureUtil import ShotRegionUtil
-
 class VisUtil:
     INTERVAL: int = 2
     COURT_DIMS: Tuple[int, int, int, int] = (
@@ -676,4 +676,102 @@ class VisUtil:
         plt.ylabel('True Positive Rate')
         plt.title(title)
         plt.legend(loc="lower right")
+        plt.show()
+        
+    @classmethod
+    def plot_rebounds_above_expected(cls, rebound_stats_df):
+        # Create position groups
+        def position_group(pos):
+            if pos in ['G', 'G-F']:
+                return 'Guards'
+            elif pos in ['F', 'F-C', 'F-G']:
+                return 'Wings'
+            elif pos in ['C', 'C-F']:
+                return 'Bigs'
+            else:
+                return 'Other'
+
+        # Filter and prepare data
+        df_filtered = rebound_stats_df[rebound_stats_df['total_opportunities'] >= 50]
+        df_filtered['position_group'] = df_filtered['position'].apply(position_group)
+        df_filtered['net_rebounds'] = df_filtered['actual_rebounds'] - df_filtered['expected_rebounds']
+
+        # Sort within each position group by rebounds_above_expected
+        df_filtered = df_filtered.sort_values(['position_group', 'rebounds_above_expected'], ascending=[True, False])
+
+        # Create figure and primary axis
+        fig, ax1 = plt.subplots(figsize=(20, 12))
+
+        # Set up colors
+        colors = ['#FF4136', '#FFA07A', '#98FB98', '#2ECC40']
+        n_bins = 100
+        cmap = LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
+        norm = plt.Normalize(df_filtered['net_rebounds'].min(), df_filtered['net_rebounds'].max())
+
+        # Create bars with position group separation
+        x = np.arange(len(df_filtered))
+        ax1.bar(x, df_filtered['net_rebounds'], width=0.8, 
+                    color=cmap(norm(df_filtered['net_rebounds'])))
+
+        # Add vertical lines to separate position groups
+        prev_group = None
+        for i, group in enumerate(df_filtered['position_group']):
+            if group != prev_group:
+                ax1.axvline(x=i-0.4, color='black', linestyle='--', alpha=0.3)
+                # Add group label
+                if prev_group is not None:
+                    ax1.text((i + last_i) / 2, ax1.get_ylim()[1], prev_group,
+                            ha='center', va='bottom')
+                last_i = i
+            prev_group = group
+            
+        # Add last group label
+        ax1.axvline(x=i+0.4, color='black', linestyle='--', alpha=0.3)
+        ax1.text((len(df_filtered) + last_i) / 2, ax1.get_ylim()[1], prev_group,
+                ha='center', va='bottom')
+
+        # Customize axes
+        ax1.set_ylabel('Net Rebounds (Actual - Expected)', fontsize=12)
+        ax1.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+        plt.xlim()
+
+        # X-axis labels
+        plt.xticks(x, [f"{row['first_name'][0]}. {row['last_name']}" for _, row in df_filtered.iterrows()],
+                rotation=45, ha='right', fontsize=8)
+
+        # Secondary axis for rebound rate - modified to break between groups
+        ax2 = ax1.twinx()
+
+        # Initialize variables for line segments
+        prev_group = None
+        line_x = []
+        line_y = []
+
+        # Plot separate line segments for each position group
+        for i, (_, row) in enumerate(df_filtered.iterrows()):
+            if prev_group is None or row['position_group'] == prev_group:
+                line_x.append(i)
+                line_y.append(row['rebounds_above_expected'])
+            else:
+                # Plot the completed segment
+                ax2.plot(line_x, line_y, color='blue', linewidth=2, label='Rebound Rate Above Expected' if i == 1 else "")
+                # Start new segment
+                line_x = [i]
+                line_y = [row['rebounds_above_expected']]
+            prev_group = row['position_group']
+
+        # Plot the final segment
+        if line_x:
+            ax2.plot(line_x, line_y, color='blue', linewidth=2)
+
+        ax2.set_ylabel('Rebound Rate Above Expected', color='blue', fontsize=12)
+        ax2.tick_params(axis='y', labelcolor='blue')
+
+        # Combine legends
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=10)
+
+        plt.title('Net Expected Rebounds & Rebound Rate Above Expected by Position\n(min 65+ Opportunities)', fontsize=16)
+        plt.tight_layout()
         plt.show()
