@@ -13,6 +13,8 @@ from sklearn.metrics import roc_curve, auc
 from scipy.interpolate import griddata
 from code.io.TrackingProcessor import TrackingProcessor
 from code.util.FeatureUtil import ShotRegionUtil
+
+
 class VisUtil:
     INTERVAL: int = 2
     COURT_DIMS: Tuple[int, int, int, int] = (
@@ -99,18 +101,18 @@ class VisUtil:
             {}
         )  # To store the reference to the last animation, outer dict key is interval, inner is event_num
         self.court = VisUtil.load_court_image()
-        
+
     @staticmethod
     def load_court_image():
         return plt.imread("data/img/app/fullcourt.png")
-    
+
     def setup_visualization(self, moments_df):
         VisUtil.setup_court(self.ax)
         home_players_ids, away_players_ids = self.extract_moment_players(moments_df)
         self.setup_players_and_ball(home_players_ids, away_players_ids)
-        
+
         return self.setup_labels(home_players_ids, away_players_ids)
-        
+
     def extract_moment_players(self, moments_df):
         # Collect home and away player_ids (ball has a teamId of -1)
         players_df = moments_df.loc[
@@ -127,9 +129,9 @@ class VisUtil:
                 "playerId"
             ].unique()
         )
-        
+
         return home_players_ids, away_players_ids
-    
+
     @classmethod
     def setup_court(cls, ax):
         x_min, x_max, y_min, y_max = cls.COURT_DIMS
@@ -138,9 +140,11 @@ class VisUtil:
         ax.axis("off")
 
         # Display the court image
-        ax.imshow(VisUtil.load_court_image(), zorder=0, extent=[x_min, x_max, y_min, y_max])
+        ax.imshow(
+            VisUtil.load_court_image(), zorder=0, extent=[x_min, x_max, y_min, y_max]
+        )
         ax.set_aspect("equal", "box")
-    
+
     @classmethod
     def set_halfcourt(cls, ax, basket_x=41.75):
         if basket_x > 0:
@@ -177,7 +181,7 @@ class VisUtil:
         for circle in self.player_circles.values():
             self.ax.add_patch(circle)
         self.ax.add_patch(self.ball_circle)
-    
+
     def setup_labels(self, home_players_ids, away_players_ids):
         # Prepare table
         column_labels = tuple([self.home_team_tuple[0], self.away_team_tuple[0]])
@@ -188,7 +192,7 @@ class VisUtil:
             ]
         )
         cell_colours = [column_colours for _ in range(5)]
-        
+
         # Create player cell entries
         home_players = [
             " #".join(
@@ -240,7 +244,7 @@ class VisUtil:
             )
             for player_id in home_players_ids + away_players_ids
         }
-        
+
         return annotations, clock_info
 
     def precompute_frames(moments_df):
@@ -398,16 +402,24 @@ class VisUtil:
         """Plot or return the Voronoi diagram for the players' positions at a specific timestamp with team-based cell shading,
         confined to the half of the court based on basket location."""
         moments_df = self.tracking_df[self.tracking_df["wcTime"] == timestamp]
-        
+
         if moments_df.empty:
             raise ValueError("No data available for the specified timestamp")
 
         if not return_data:
             self.fig, self.ax = plt.subplots(figsize=(12, 8))
-            self.setup_visualization(moments_df)  # Setup the court visualization based on the current moments dataframe
+            self.setup_visualization(
+                moments_df
+            )  # Setup the court visualization based on the current moments dataframe
 
-        ball_data = moments_df[moments_df["teamId"] == "-1"].iloc[0] if not moments_df[moments_df["teamId"] == "-1"].empty else None
-        player_data = moments_df[moments_df["teamId"] != "-1"][["playerId", "x", "y", "teamId"]].values
+        ball_data = (
+            moments_df[moments_df["teamId"] == "-1"].iloc[0]
+            if not moments_df[moments_df["teamId"] == "-1"].empty
+            else None
+        )
+        player_data = moments_df[moments_df["teamId"] != "-1"][
+            ["playerId", "x", "y", "teamId"]
+        ].values
 
         # Define artificial boundary points at the edges of the court
         boundary_points = np.array([[-47, -25], [-47, 25], [47, -25], [47, 25]])
@@ -422,7 +434,15 @@ class VisUtil:
             half_court_bounds = Polygon([(-47, -25), (-47, 25), (0, 25), (0, -25)])
 
         if not return_data:
-            voronoi_plot_2d(vor, ax=self.ax, show_vertices=False, show_points=False, line_colors="orange", line_width=2, line_alpha=0.6)
+            voronoi_plot_2d(
+                vor,
+                ax=self.ax,
+                show_vertices=False,
+                show_points=False,
+                line_colors="orange",
+                line_width=2,
+                line_alpha=0.6,
+            )
 
         player_regions = {}
         for point_index, region_index in enumerate(vor.point_region):
@@ -431,16 +451,26 @@ class VisUtil:
                 vertices = vor.vertices[region]
                 if vertices.size > 0:
                     polygon = Polygon(vertices)
-                    clipped_polygon = polygon.intersection(half_court_bounds)  # Clip to court bounds
+                    clipped_polygon = polygon.intersection(
+                        half_court_bounds
+                    )  # Clip to court bounds
                     if not clipped_polygon.is_empty:
-                        if point_index < len(player_data):  # Check if index is within the range of player_data
+                        if point_index < len(
+                            player_data
+                        ):  # Check if index is within the range of player_data
                             player_id = str(player_data[point_index][0])
                             team_id = str(player_data[point_index][3])
                             if return_data:
                                 player_regions[player_id] = clipped_polygon
                             else:
-                                team_color = self.TEAM_COLOR_DICT.get(team_id, '#808080')[0]
-                                patch = MplPolygon(list(clipped_polygon.exterior.coords), color=team_color, alpha=0.3)
+                                team_color = self.TEAM_COLOR_DICT.get(
+                                    team_id, "#808080"
+                                )[0]
+                                patch = MplPolygon(
+                                    list(clipped_polygon.exterior.coords),
+                                    color=team_color,
+                                    alpha=0.3,
+                                )
                                 self.ax.add_patch(patch)
                         else:
                             continue  # Skip boundary points which do not correspond to any player
@@ -451,7 +481,7 @@ class VisUtil:
             # Set plot limits to the appropriate half-court dimensions
             self.ax.set_xlim([0, 47] if basket_x > 0 else [-47, 0])
             self.ax.set_ylim(-25, 25)
-        
+
             # Plot players
             for index, row in moments_df.iterrows():
                 player_id = row["playerId"]
@@ -459,20 +489,34 @@ class VisUtil:
                     circle = self.player_circles[player_id]
                     circle.center = (row["x"], row["y"])
                     self.ax.add_patch(circle)
-                    self.ax.annotate(f"{self.players_dict[player_id][1]}", xy=(row["x"], row["y"]), color="white", ha="center", va="center", fontweight="bold", fontsize=10)
+                    self.ax.annotate(
+                        f"{self.players_dict[player_id][1]}",
+                        xy=(row["x"], row["y"]),
+                        color="white",
+                        ha="center",
+                        va="center",
+                        fontweight="bold",
+                        fontsize=10,
+                    )
 
             # Plot the ball if data is available
             if ball_data is not None:
-                ball_circle = Circle((ball_data["x"], ball_data["y"]), ball_data["z"] / self.NORMALIZATION_COEF, color="orange", zorder=5)
+                ball_circle = Circle(
+                    (ball_data["x"], ball_data["y"]),
+                    ball_data["z"] / self.NORMALIZATION_COEF,
+                    color="orange",
+                    zorder=5,
+                )
                 self.ax.add_patch(ball_circle)
 
             self.ax.figure.canvas.draw()
-            
-            self.ax.axis('off')
+
+            self.ax.axis("off")
             plt.show()
 
-            
-    def plot_court_hexmap(df, x_col, y_col, label='Density (log scale)', return_data=False):
+    def plot_court_hexmap(
+        df, x_col, y_col, label="Density (log scale)", return_data=False
+    ):
         """
         Plots a hexmap of locations on the basketball court based on provided x and y coordinates.
         Each cell represents approximately 1.5 feet in radius, and cells are color-weighted based on the density.
@@ -486,35 +530,43 @@ class VisUtil:
         """
         # Create a new figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
-        
+
         # Draw the court
         VisUtil.setup_court(ax)
-        
+
         # Mirror data points across half court for plotting
         df = TrackingProcessor.mirror_court_data(df, x_col, y_col)
 
         # Plotting the data using hexbin
         hexbin = ax.hexbin(
-            df[x_col], df[y_col],
-            gridsize=int((47 / 1.5) / 2),  # based on court dimensions and desired hex radius
-            cmap='viridis',  # Changed to a more visually distinct colormap
-            bins='log',  # Logarithmic scale to enhance visibility for sparse data
-            edgecolors='black',
+            df[x_col],
+            df[y_col],
+            gridsize=int(
+                (47 / 1.5) / 2
+            ),  # based on court dimensions and desired hex radius
+            cmap="viridis",  # Changed to a more visually distinct colormap
+            bins="log",  # Logarithmic scale to enhance visibility for sparse data
+            edgecolors="black",
             linewidth=0.5,
-            extent=[0, 47, -25, 25]  # Set the extent to match the half-court dimensions
+            extent=[
+                0,
+                47,
+                -25,
+                25,
+            ],  # Set the extent to match the half-court dimensions
         )
 
         # Set plot limits to only show half-court
         VisUtil.set_halfcourt(ax)
-        
+
         if return_data:
             # Create DataFrame from hexbin data
             hexbin_data = {
-                'centers': hexbin.get_offsets(),
-                'densities': hexbin.get_array()
+                "centers": hexbin.get_offsets(),
+                "densities": hexbin.get_array(),
             }
-            hexbin_df = pd.DataFrame(hexbin_data['centers'], columns=['x', 'y'])
-            hexbin_df['density'] = hexbin_data['densities']
+            hexbin_df = pd.DataFrame(hexbin_data["centers"], columns=["x", "y"])
+            hexbin_df["density"] = hexbin_data["densities"]
             plt.close(fig)  # Close the plot to prevent it from showing
             return hexbin_df
         else:
@@ -524,100 +576,119 @@ class VisUtil:
 
             # Retrieve counts from hexbin and determine tick labels directly from the bin counts
             counts = hexbin.get_array()
-            unique_counts = np.unique(counts[counts > 0]).astype(int)  # Get unique non-zero counts as integers
+            unique_counts = np.unique(counts[counts > 0]).astype(
+                int
+            )  # Get unique non-zero counts as integers
 
             # Sort unique counts to ensure they are in increasing order for setting ticks
             sorted_counts = np.sort(unique_counts)
 
             # Generate indices to pick exactly 8 labels, if there are enough unique counts
-            num_labels = min(8, len(sorted_counts))  # Use 8 or fewer if there aren't enough unique counts
+            num_labels = min(
+                8, len(sorted_counts)
+            )  # Use 8 or fewer if there aren't enough unique counts
             indices = np.linspace(0, len(sorted_counts) - 1, num=num_labels, dtype=int)
             selected_ticks = sorted_counts[indices]
 
             # Apply these selected counts as ticks to the color bar
             cbar.set_ticks(selected_ticks)  # Set ticks at selected counts
             cbar.set_ticklabels(selected_ticks)  # Use the selected counts as labels
-            
+
             # Disable minor ticks on the colorbar to avoid extra ticks
             cbar.ax.minorticks_off()
 
             # Set plot limits and disable axis
-            ax.axis('off')
+            ax.axis("off")
 
             # Display the plot
             plt.show()
-            
-                
-    def plot_topographical_heatmap(shots_df, x_col="shot_x", y_col="shot_y", weight_col="true_impact_points_produced", grid_density=100, ax=None):
+
+    def plot_topographical_heatmap(
+        shots_df,
+        x_col="shot_x",
+        y_col="shot_y",
+        weight_col="true_impact_points_produced",
+        grid_density=100,
+        ax=None,
+    ):
         """
         Plot a topographical heatmap based on shot locations and weighted by points potential using hexbin aggregation.
-        
+
         Args:
             shots_df (DataFrame): DataFrame containing shot data with coordinates and weights.
             x_col (str): The name of the column in shots_df that contains the x coordinates.
             y_col (str): The name of the column in shots_df that contains the y coordinates.
             weight_col (str): The name of the column in shots_df that contains the weights for the heatmap.
             grid_density (int): The density of the grid used for interpolation.
-            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
+            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on.
                                                                 If None, creates a new figure and axis.
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
-        
+
         # Mirror the court data to ensure all data is on the half-court
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
-        
+
         # Create hexbin plot and get the centers and values
-        hb = ax.hexbin(shots_df[x_col], shots_df[y_col], C=shots_df[weight_col], gridsize=int((47 / 1.5) / 2), reduce_C_function=np.mean, mincnt=1)
-        
+        hb = ax.hexbin(
+            shots_df[x_col],
+            shots_df[y_col],
+            C=shots_df[weight_col],
+            gridsize=int((47 / 1.5) / 2),
+            reduce_C_function=np.mean,
+            mincnt=1,
+        )
+
         # Extract hexbin data
         x = hb.get_offsets()[:, 0]
         y = hb.get_offsets()[:, 1]
         z = hb.get_array()
-        
+
         # Close the hexbin plot figure to avoid displaying it
         plt.close(fig)
         fig, ax = plt.subplots(figsize=(12, 11))
-        
+
         # Generate grid data for heatmap
         xi = np.linspace(0, 47, grid_density)
         yi = np.linspace(-25, 25, grid_density)
         xi, yi = np.meshgrid(xi, yi)
-        
+
         # Interpolate using griddata
-        zi = griddata((x, y), z, (xi, yi), method='cubic')
-        
+        zi = griddata((x, y), z, (xi, yi), method="cubic")
+
         # Create a mask for the entire half-court area
         court_mask = (xi >= 0) & (xi <= 47) & (yi >= -25) & (yi <= 25)
         zi[~court_mask] = 0  # Set areas outside the half-court to a neutral value
-        
+
         # Plot heatmap with specified extent
         levels = np.linspace(np.nanmin(zi), np.nanmax(zi), 200)
-        c = ax.contourf(xi, yi, zi, levels=levels, cmap="seismic", alpha=0.65, extend='both')
+        c = ax.contourf(
+            xi, yi, zi, levels=levels, cmap="seismic", alpha=0.65, extend="both"
+        )
         plt.colorbar(c, ax=ax, label=weight_col)
-        
+
         # Add contour lines for better contrast
-        ax.contour(xi, yi, zi, levels=levels, colors='black', linewidths=0.1)
-        
+        ax.contour(xi, yi, zi, levels=levels, colors="black", linewidths=0.1)
+
         # Set court limits explicitly
         VisUtil.setup_court(ax)
-        
+
         # Set plot limits to the borders of the contour plot
         ax.set_xlim(8, 44)
         ax.set_ylim(-22, 22)
-    
-        plt.show()    
-        
+
+        plt.show()
+
     @staticmethod
     def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
         """
         Plot shot attempts and overlay shot regions on a half-court diagram.
-        
+
         Args:
             shots_df (DataFrame): DataFrame containing shot coordinates and optionally shot outcomes.
             x_col (str): The name of the column in shots_df that contains the x coordinates.
             y_col (str): The name of the column in shots_df that contains the y coordinates.
-            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on. 
+            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on.
                                                                 If None, creates a new figure and axis.
         """
         if ax is None:
@@ -626,41 +697,80 @@ class VisUtil:
 
         shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
 
-        made_shots = shots_df[shots_df['made'] == True]
-        missed_shots = shots_df[shots_df['made'] == False]
+        made_shots = shots_df[shots_df["made"] == True]
+        missed_shots = shots_df[shots_df["made"] == False]
 
-        ax.scatter(made_shots[x_col], made_shots[y_col], c='blue', edgecolors='w', s=50, alpha=0.75, label='Field Goal Made (FGM)')
-        ax.scatter(missed_shots[x_col], missed_shots[y_col], c='red', marker='x', s=50, alpha=0.75, label='Field Goal Missed (FGX)')
+        ax.scatter(
+            made_shots[x_col],
+            made_shots[y_col],
+            c="blue",
+            edgecolors="w",
+            s=50,
+            alpha=0.75,
+            label="Field Goal Made (FGM)",
+        )
+        ax.scatter(
+            missed_shots[x_col],
+            missed_shots[y_col],
+            c="red",
+            marker="x",
+            s=50,
+            alpha=0.75,
+            label="Field Goal Missed (FGX)",
+        )
 
         for region, polygon in ShotRegionUtil.regions.items():
             if region in ["BEYOND_HALFCOURT"]:
                 continue
-            patch = MplPolygon(list(polygon.exterior.coords), closed=True, edgecolor='k', fill=True, facecolor=ShotRegionUtil.region_colors.get(region, "#FFFFFF"), alpha=0.3, linewidth=1.5, linestyle='--')
+            patch = MplPolygon(
+                list(polygon.exterior.coords),
+                closed=True,
+                edgecolor="k",
+                fill=True,
+                facecolor=ShotRegionUtil.region_colors.get(region, "#FFFFFF"),
+                alpha=0.3,
+                linewidth=1.5,
+                linestyle="--",
+            )
             ax.add_patch(patch)
             centroid = polygon.centroid
-            ax.text(centroid.x, centroid.y, region, color='black', ha='center', va='center', fontsize=10)
+            ax.text(
+                centroid.x,
+                centroid.y,
+                region,
+                color="black",
+                ha="center",
+                va="center",
+                fontsize=10,
+            )
 
-        ax.legend(loc='upper left')
+        ax.legend(loc="upper left")
         VisUtil.set_halfcourt(ax)
         plt.show()
-        
+
     def plot_hexmap_from_df(hexmap_df):
         # Setup the plot - adjust figsize if needed
         fig, ax = plt.subplots(figsize=(12, 11))
         VisUtil.setup_court(ax)
         VisUtil.set_halfcourt(ax)
-                
+
         # Create a hexbin plot
-        plt.hexbin(hexmap_df['x'], hexmap_df['y'], C=hexmap_df['density'], gridsize=50, cmap='viridis', reduce_C_function=np.sum)
-        plt.colorbar(label='Density')
-        
+        plt.hexbin(
+            hexmap_df["x"],
+            hexmap_df["y"],
+            C=hexmap_df["density"],
+            gridsize=50,
+            cmap="viridis",
+            reduce_C_function=np.sum,
+        )
+        plt.colorbar(label="Density")
+
         # Adding labels and title
-        plt.title('Hexmap Density Visualization')
-        
+        plt.title("Hexmap Density Visualization")
+
         # Show the plot
         plt.show()
-        
-    
+
     def plot_auc(y_true, y_pred, title="ROC Curve"):
         # Compute ROC curve and ROC area
         fpr, tpr, thresholds = roc_curve(y_true, y_pred)
@@ -668,110 +778,181 @@ class VisUtil:
 
         # Plot ROC curve
         plt.figure()
-        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
-        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.plot(
+            fpr,
+            tpr,
+            color="darkorange",
+            lw=2,
+            label="ROC curve (area = %0.2f)" % roc_auc,
+        )
+        plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
         plt.title(title)
         plt.legend(loc="lower right")
         plt.show()
-        
+
     @classmethod
-    def plot_rebounds_above_expected(cls, rebound_stats_df):
-        # Create position groups
+    def plot_rebounds_above_expected(
+        cls, rebound_stats_df, min_opportunities: int = 50
+    ):
+        # Position group function remains the same
         def position_group(pos):
-            if pos in ['G', 'G-F']:
-                return 'Guards'
-            elif pos in ['F', 'F-C', 'F-G']:
-                return 'Wings'
-            elif pos in ['C', 'C-F']:
-                return 'Bigs'
+            if pos in ["G", "G-F"]:
+                return "Guards"
+            elif pos in ["F", "F-C", "F-G"]:
+                return "Wings"
+            elif pos in ["C", "C-F"]:
+                return "Bigs"
             else:
-                return 'Other'
+                return "Other"
 
-        # Filter and prepare data
-        df_filtered = rebound_stats_df[rebound_stats_df['total_opportunities'] >= 50]
-        df_filtered['position_group'] = df_filtered['position'].apply(position_group)
-        df_filtered['net_rebounds'] = df_filtered['actual_rebounds'] - df_filtered['expected_rebounds']
+        # Data preparation with custom position group ordering
+        df_filtered = rebound_stats_df[rebound_stats_df["total_opportunities"] >= min_opportunities]
+        df_filtered["position_group"] = df_filtered["position"].apply(position_group)
+        df_filtered["net_rebounds"] = (
+            df_filtered["actual_rebounds"] - df_filtered["expected_rebounds"]
+        )
 
-        # Sort within each position group by rebounds_above_expected
-        df_filtered = df_filtered.sort_values(['position_group', 'rebounds_above_expected'], ascending=[True, False])
+        # Create categorical type with custom ordering
+        position_order = ["Bigs", "Wings", "Guards"]
+        df_filtered["position_group"] = pd.Categorical(
+            df_filtered["position_group"], 
+            categories=position_order, 
+            ordered=True
+        )
+
+        # Sort with custom position order
+        df_filtered = df_filtered.sort_values(
+            ["position_group", "rebounds_above_expected"], 
+            ascending=[True, False]
+        )
 
         # Create figure and primary axis
         fig, ax1 = plt.subplots(figsize=(20, 12))
 
-        # Set up colors
-        colors = ['#FF4136', '#FFA07A', '#98FB98', '#2ECC40']
+        # Colors setup remains the same
+        colors = ["#FF4136", "#FFA07A", "#98FB98", "#2ECC40"]
         n_bins = 100
-        cmap = LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
-        norm = plt.Normalize(df_filtered['net_rebounds'].min(), df_filtered['net_rebounds'].max())
+        cmap = LinearSegmentedColormap.from_list("custom", colors, N=n_bins)
+        norm = plt.Normalize(
+            df_filtered["net_rebounds"].min(), df_filtered["net_rebounds"].max()
+        )
 
-        # Create bars with position group separation
+        # Create bars
         x = np.arange(len(df_filtered))
-        ax1.bar(x, df_filtered['net_rebounds'], width=0.8, 
-                    color=cmap(norm(df_filtered['net_rebounds'])))
+        ax1.bar(
+            x,
+            df_filtered["net_rebounds"],
+            width=0.8,
+            color=cmap(norm(df_filtered["net_rebounds"])),
+        )
 
-        # Add vertical lines to separate position groups
+        # Center the primary y-axis around zero
+        max_abs_y1 = max(
+            abs(df_filtered["net_rebounds"].min()),
+            abs(df_filtered["net_rebounds"].max()),
+        ) * 1.05
+        ax1.set_ylim(-max_abs_y1, max_abs_y1)
+
+        # Add vertical lines and group labels
         prev_group = None
-        for i, group in enumerate(df_filtered['position_group']):
+        for i, group in enumerate(df_filtered["position_group"]):
             if group != prev_group:
-                ax1.axvline(x=i-0.4, color='black', linestyle='--', alpha=0.3)
-                # Add group label
+                ax1.axvline(x=i - 0.4, color="black", linestyle="--", alpha=0.3)
                 if prev_group is not None:
-                    ax1.text((i + last_i) / 2, ax1.get_ylim()[1], prev_group,
-                            ha='center', va='bottom')
+                    ax1.text(
+                        (i + last_i) / 2,
+                        ax1.get_ylim()[1] * 0.95,
+                        prev_group,
+                        ha="center",
+                        va="bottom",
+                        fontsize=14
+                    )
                 last_i = i
             prev_group = group
-            
-        # Add last group label
-        ax1.axvline(x=i+0.4, color='black', linestyle='--', alpha=0.3)
-        ax1.text((len(df_filtered) + last_i) / 2, ax1.get_ylim()[1], prev_group,
-                ha='center', va='bottom')
 
-        # Customize axes
-        ax1.set_ylabel('Net Rebounds (Actual - Expected)', fontsize=12)
-        ax1.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
-        plt.xlim()
+        # Add last group label and line
+        ax1.axvline(x=len(df_filtered) - 0.4, color="black", linestyle="--", alpha=0.3)
+        ax1.text(
+            (len(df_filtered) + last_i) / 2,
+            ax1.get_ylim()[1] * 0.95,
+            prev_group,
+            ha="center",
+            va="bottom",
+            fontsize=14
+        )
+
+        # Customize primary axis
+        ax1.set_ylabel("Net Rebounds (Actual - Expected)", fontsize=12)
+        ax1.axhline(y=0, color="black", linestyle="-", linewidth=0.5)
 
         # X-axis labels
-        plt.xticks(x, [f"{row['first_name'][0]}. {row['last_name']}" for _, row in df_filtered.iterrows()],
-                rotation=45, ha='right', fontsize=8)
+        plt.xticks(
+            x,
+            [
+                f"{row['first_name'][0]}. {row['last_name']}"
+                for _, row in df_filtered.iterrows()
+            ],
+            rotation=45,
+            ha="right",
+            fontsize=8,
+        )
 
-        # Secondary axis for rebound rate - modified to break between groups
+        # Secondary axis with broken lines between groups
         ax2 = ax1.twinx()
-
-        # Initialize variables for line segments
         prev_group = None
         line_x = []
         line_y = []
 
-        # Plot separate line segments for each position group
         for i, (_, row) in enumerate(df_filtered.iterrows()):
-            if prev_group is None or row['position_group'] == prev_group:
+            if prev_group is None or row["position_group"] == prev_group:
                 line_x.append(i)
-                line_y.append(row['rebounds_above_expected'])
+                line_y.append(row["rebounds_above_expected"])
             else:
-                # Plot the completed segment
-                ax2.plot(line_x, line_y, color='blue', linewidth=2, label='Rebound Rate Above Expected' if i == 1 else "")
-                # Start new segment
+                ax2.plot(
+                    line_x,
+                    line_y,
+                    color="blue",
+                    linewidth=2,
+                    label="Rebound Rate Above Expected" if i == 1 else "",
+                )
                 line_x = [i]
-                line_y = [row['rebounds_above_expected']]
-            prev_group = row['position_group']
+                line_y = [row["rebounds_above_expected"]]
+            prev_group = row["position_group"]
 
-        # Plot the final segment
         if line_x:
-            ax2.plot(line_x, line_y, color='blue', linewidth=2)
+            ax2.plot(line_x, line_y, color="blue", linewidth=2)
 
+        # Center the secondary y-axis around zero
+        max_abs_y2 = max(
+            abs(df_filtered["rebounds_above_expected"].min()),
+            abs(df_filtered["rebounds_above_expected"].max()),
+        ) * 1.05
+        ax2.set_ylim(-max_abs_y2, max_abs_y2)
+
+        # Format y-axis ticks as percentages
+        ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
         ax2.set_ylabel('Rebound Rate Above Expected', color='blue', fontsize=12)
         ax2.tick_params(axis='y', labelcolor='blue')
+        
+        # For the primary y-axis (net rebounds)
+        ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'+{y:.1f}' if y > 0 else f'{y:.1f}'))
 
-        # Combine legends
+        # For the secondary y-axis (rebound rate)
+        ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'+{y:.1%}' if y > 0 else f'{y:.1%}'))
+
+        # Legends and title
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=10)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=10)
 
-        plt.title('Net Expected Rebounds & Rebound Rate Above Expected by Position\n(min 65+ Opportunities)', fontsize=16)
+        plt.title(
+            f"Net Expected Rebounds & Rebound Rate Above Expected by Position\n(min {min_opportunities}+ Opportunities)",
+            fontsize=16,
+            pad=20,
+        )
         plt.tight_layout()
         plt.show()
