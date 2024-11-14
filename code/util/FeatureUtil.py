@@ -591,31 +591,30 @@ class FeatureUtil:
     def calculate_player_rebound_statistics(rebound_data):
         """
         Calculate rebound statistics for each player, comparing expected to actual rebound percentages.
-        
-        Args:
-            rebound_data (DataFrame): DataFrame containing rebound data with columns:
-                - player_rebound_chances (dict): Dictionary of player IDs to rebound chances
-                - rebounder_id: ID of player who got the rebound
-                
-        Returns:
-            DataFrame: DataFrame with player rebound statistics
         """
-        def process_rebound_opportunities(group):
-            all_opportunities = []
-            actual_rebounds = []
+        def process_rebound_opportunities(row):
+            if row['player_rebound_chances'] is None:
+                return pd.Series({
+                    'total_opportunities': 0,
+                    'expected_rebounds': 0,
+                    'actual_rebounds': 0,
+                    'expected_reb_percentage': 0,
+                    'actual_reb_percentage': 0,
+                    'rebounds_above_expected': 0
+                })
             
-            # Process each shot's rebound opportunity
-            for _, row in group.iterrows():
-                if row['player_rebound_chances'] is not None:
-                    for player_id, chance in row['player_rebound_chances'].items():
-                        all_opportunities.append({
-                            'player_id': player_id,
-                            'rebound_chance': chance,
-                            'got_rebound': player_id == row['rebounder_id']
-                        })
+            # Convert player chances to a list of dictionaries
+            opportunities = [
+                {
+                    'player_id': player_id,
+                    'rebound_chance': chance,
+                    'got_rebound': player_id == row['rebounder_id']
+                }
+                for player_id, chance in row['player_rebound_chances'].items()
+            ]
             
-            # Convert to DataFrame for easier processing
-            opp_df = pd.DataFrame(all_opportunities)
+            # Convert to DataFrame for processing
+            opp_df = pd.DataFrame(opportunities)
             if len(opp_df) == 0:
                 return pd.Series({
                     'total_opportunities': 0,
@@ -631,19 +630,42 @@ class FeatureUtil:
                 'rebound_chance': ['count', 'sum'],
                 'got_rebound': 'sum'
             }).reset_index()
-            
+
             player_stats.columns = ['player_id', 'total_opportunities', 'expected_rebounds', 'actual_rebounds']
             
-            # Calculate percentages and differential
-            player_stats['expected_reb_percentage'] = (player_stats['expected_rebounds'] / 100)
-            player_stats['actual_reb_percentage'] = (player_stats['actual_rebounds'] / player_stats['total_opportunities'])
-            player_stats['rebounds_above_expected'] = (player_stats['actual_reb_percentage'] - 
-                                                    player_stats['expected_reb_percentage'])
+            # Normalize to per possession
+            player_stats['expected_rebounds'] = player_stats['expected_rebounds'] / 100
             
             return player_stats
         
-        return rebound_data.apply(process_rebound_opportunities).reset_index(drop=True)
-
+        # Process each row and concatenate results
+        all_stats = []
+        for _, row in rebound_data.iterrows():
+            stats = process_rebound_opportunities(row)
+            if isinstance(stats, pd.DataFrame) and len(stats) > 0:
+                all_stats.append(stats)
+        
+        # Combine all stats and aggregate by player
+        if all_stats:
+            final_stats = pd.concat(all_stats, ignore_index=True)
+            return final_stats.groupby('player_id').agg({
+                'total_opportunities': 'sum',
+                'expected_rebounds': 'sum',
+                'actual_rebounds': 'sum'
+            }).assign(
+                expected_reb_percentage=lambda x: x['expected_rebounds'] / x['total_opportunities'],
+                actual_reb_percentage=lambda x: x['actual_rebounds'] / x['total_opportunities'],
+                rebounds_above_expected=lambda x: (
+                    x['actual_rebounds'] / x['total_opportunities'] - 
+                    x['expected_rebounds'] / x['total_opportunities']
+                )
+            ).reset_index()
+        else:
+            return pd.DataFrame(columns=[
+                'player_id', 'total_opportunities', 'expected_rebounds', 
+                'actual_rebounds', 'expected_reb_percentage', 
+                'actual_reb_percentage', 'rebounds_above_expected'
+            ])
     
     def calculate_net_gains(shot_statistics_by_region):
         """
