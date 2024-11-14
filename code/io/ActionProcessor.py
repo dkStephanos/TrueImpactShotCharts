@@ -27,7 +27,7 @@ class ActionProcessor:
             event_df[event_df["eventType"] == "SHOT"].drop(columns=["dReb"]).copy()
         )
         rebounds_df = event_df[event_df["eventType"] == "REB"][
-            ["gameId", "teamId", "period", "wcTime", "dReb"]
+            ["gameId", "teamId", "playerId", "period", "wcTime", "dReb"]  # Added playerId
         ].copy()
 
         # Merging shots and rebounds on 'gameId' and 'period', then filtering and deduplicating
@@ -76,13 +76,14 @@ class ActionProcessor:
                 "wcTime_reb": "rebound_time",
                 "teamId_reb": "rebound_teamId",
                 "teamId_shot": "teamId",
+                "playerId_reb": "rebounder_id"  # Add rebounder_id
             }
         )
         result_df = result_df.dropna(
             subset=["shot_x", "shot_y"]
         )
 
-        # Combine made and missed shot data, ensuring that rebound data for made shots is filled with nulls
+        # Combine made and missed shot data
         made_shots = pd.merge(
             shots_df.loc[shots_df["made"] == True],
             tracking_df[["gameId", "wcTime", "x", "y"]],
@@ -97,7 +98,7 @@ class ActionProcessor:
 
         return pd.concat(
             [
-                made_shots,  # Made shots, already included in shots_with_pos
+                made_shots,  # Made shots
                 result_df,  # Missed shots merged with rebound data
             ],
             ignore_index=True,
