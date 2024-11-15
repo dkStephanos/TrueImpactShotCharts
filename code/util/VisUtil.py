@@ -956,3 +956,54 @@ class VisUtil:
         )
         plt.tight_layout()
         plt.show()
+
+    @classmethod
+    def plot_expected_rebounds(
+        cls, rebound_stats_df, min_opportunities: int = 60
+    ):
+        # Filter for 65+ opportunities and sort by expected rebounds
+        df_filtered = rebound_stats_df[rebound_stats_df['total_opportunities'] >= min_opportunities]
+        df_filtered = df_filtered.sort_values('rebounds_above_expected', ascending=False)
+
+        # Create figure and primary axis
+        fig, ax1 = plt.subplots(figsize=(20, 12))
+
+        # Set positions
+        x = range(len(df_filtered))
+
+        # Create custom colormap for expected rebounds (single color gradient, e.g., shades of green)
+        colors = ['#E0F7FA', '#00695C']  # Light teal to dark teal
+        n_bins = 100
+        cmap = LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
+
+        # Normalize color values based on expected rebounds
+        norm = plt.Normalize(df_filtered['expected_rebounds'].min(), df_filtered['expected_rebounds'].max())
+
+        # Create bars on primary axis with color gradient based on expected rebounds
+        ax1.bar(x, df_filtered['expected_rebounds'], width=0.8, 
+                    color=cmap(norm(df_filtered['expected_rebounds'])))
+
+        # Set the y-axis label for expected rebounds (actual values, not percentages)
+        ax1.set_ylabel('Expected Rebounds', fontsize=16)
+        ax1.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+
+        # Customize x-axis with angled labels
+        plt.xticks(x, [f"{row['first_name']} {row['last_name']}" for _, row in df_filtered.iterrows()],
+                rotation=45, ha='right', fontsize=8)
+
+        # Create secondary axis for the rebound rate line (in percentage)
+        ax2 = ax1.twinx()
+        ax2.plot(x, df_filtered['rebounds_above_expected'] * 100,  # Convert to percentage
+                color='purple', linestyle='dotted', linewidth=5, label='RROE')  # Change line to gray and dotted
+        ax2.set_ylabel('Rebound Rate Over Expected (%)', color='purple', fontsize=16)
+        ax2.tick_params(axis='y', labelcolor='purple')
+        ax2.set_yticklabels([f'{int(tick)}%' for tick in ax2.get_yticks()])  # Convert ticks to percentages
+
+        # Combine legends and increase font size of legend
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=16)  # Increase legend font size
+
+        plt.title(f'Expected Rebounds and Rebound Rate Over Expected by Player\n({min_opportunities}+ Opportunities)', fontsize=20)
+        plt.tight_layout()
+        plt.show()
