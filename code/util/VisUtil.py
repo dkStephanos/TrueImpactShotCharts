@@ -611,74 +611,110 @@ class VisUtil:
         grid_density=100,
         ax=None,
     ):
-        """
-        Plot a topographical heatmap based on shot locations and weighted by points potential using hexbin aggregation.
-
-        Args:
-            shots_df (DataFrame): DataFrame containing shot data with coordinates and weights.
-            x_col (str): The name of the column in shots_df that contains the x coordinates.
-            y_col (str): The name of the column in shots_df that contains the y coordinates.
-            weight_col (str): The name of the column in shots_df that contains the weights for the heatmap.
-            grid_density (int): The density of the grid used for interpolation.
-            ax (matplotlib.axes._subplots.AxesSubplot, optional): Matplotlib subplot object to plot on.
-                                                                If None, creates a new figure and axis.
-        """
         if ax is None:
             fig, ax = plt.subplots(figsize=(12, 11))
 
-        # Mirror the court data to ensure all data is on the half-court
-        shots_df = TrackingProcessor.mirror_court_data(shots_df, x_col, y_col)
+        # Filter and clean data
+        valid_shots = shots_df[shots_df['shot_classification'] != 'beyond_halfcourt'].copy()
+        valid_shots = valid_shots.dropna(subset=[x_col, y_col, weight_col])
+        mean_value = valid_shots[weight_col].mean()
+        
+        print(f"Statistics for {weight_col}:")
+        print(valid_shots[weight_col].describe())
+        
+        # Add boundary points with higher density near edges
+        boundary_points = []
+        
+        # Create denser boundary points
+        x_bounds = np.linspace(-2, 47, 50)
+        y_bounds = np.linspace(-25, 25, 50)
+        
+        # Add zero points along boundaries
+        for x in x_bounds:
+            boundary_points.append([x, -25, 0])
+            boundary_points.append([x, 25, 0])
+        for y in y_bounds:
+            boundary_points.append([47, y, 0])
+            boundary_points.append([0, y, 0])
+        
+        # Add backcourt zeros
+        for x in np.linspace(-2, 0, 10):
+            for y in np.linspace(-25, 25, 10):
+                boundary_points.append([x, y, 0])
 
-        # Create hexbin plot and get the centers and values
-        hb = ax.hexbin(
-            shots_df[x_col],
-            shots_df[y_col],
-            C=shots_df[weight_col],
-            gridsize=int((47 / 1.5) / 2),
-            reduce_C_function=np.mean,
-            mincnt=1,
-        )
+        # Add background mean value points with higher density
+        for x in np.linspace(0, 47, 30):
+            for y in np.linspace(-24.9, 24.9, 30):
+                # Use different base values for different regions
+                if x > 39:  # Near basket
+                    base_value = mean_value * 0.9
+                elif x < 23.25:  # 3pt line and beyond
+                    base_value = mean_value * 0.7
+                else:  # Mid-range
+                    base_value = mean_value * 0.8
+                boundary_points.append([x, y, base_value])
 
-        # Extract hexbin data
-        x = hb.get_offsets()[:, 0]
-        y = hb.get_offsets()[:, 1]
-        z = hb.get_array()
+        boundary_df = pd.DataFrame(boundary_points, columns=[x_col, y_col, weight_col])
+        valid_shots = pd.concat([valid_shots, boundary_df])
 
-        # Close the hexbin plot figure to avoid displaying it
-        plt.close(fig)
-        fig, ax = plt.subplots(figsize=(12, 11))
-
-        # Generate grid data for heatmap
-        xi = np.linspace(0, 47, grid_density)
+        # Generate grid
+        xi = np.linspace(-2, 47, grid_density)
         yi = np.linspace(-25, 25, grid_density)
         xi, yi = np.meshgrid(xi, yi)
 
-        # Interpolate using griddata
-        zi = griddata((x, y), z, (xi, yi), method="cubic")
 
-        # Create a mask for the entire half-court area
-        court_mask = (xi >= 0) & (xi <= 47) & (yi >= -25) & (yi <= 25)
-        zi[~court_mask] = 0  # Set areas outside the half-court to a neutral value
-
-        # Plot heatmap with specified extent
-        levels = np.linspace(np.nanmin(zi), np.nanmax(zi), 200)
-        c = ax.contourf(
-            xi, yi, zi, levels=levels, cmap="seismic", alpha=0.65, extend="both"
+        zi = griddata(
+            (valid_shots[x_col], valid_shots[y_col]), 
+            valid_shots[weight_col],
+            (xi, yi),
+            method='linear',
+            fill_value=mean_value
         )
-        plt.colorbar(c, ax=ax, label=weight_col)
 
-        # Add contour lines for better contrast
-        ax.contour(xi, yi, zi, levels=levels, colors="black", linewidths=0.1)
+        # Create court mask
+        court_mask = (xi <= 47) & (yi >= -25) & (yi <= 25)
+        zi[~court_mask] = 0
 
-        # Set court limits explicitly
+        # Apply minimal smoothing
+        from scipy.ndimage import gaussian_filter
+        zi = gaussian_filter(zi, sigma=0.8)
+
+        max_val = 2.0
+        levels = np.linspace(0, max_val, 20)
+
+        # Plot filled contours
+        c = ax.contourf(
+            xi, yi, zi,
+            levels=levels,
+            cmap='RdYlBu_r',
+            alpha=0.8,
+            extend='both',
+            vmin=0,
+            vmax=max_val
+        )
+        plt.colorbar(c, ax=ax, label=f'{weight_col} (points per shot)')
+
+        # Add contour lines with reduced frequency
+        contour = ax.contour(
+            xi, yi, zi,
+            levels=levels[::3],
+            colors='black',
+            linewidths=0.3,
+            alpha=0.2
+        )
+
+        # Draw the court
         VisUtil.setup_court(ax)
 
-        # Set plot limits to the borders of the contour plot
-        ax.set_xlim(8, 44)
-        ax.set_ylim(-22, 22)
+        # Set court limits
+        ax.set_xlim(-2, 47)
+        ax.set_ylim(-25, 25)
 
+        plt.title(f"Shot Value Topography: {weight_col}")
         plt.show()
 
+        return zi
+    
     @staticmethod
     def plot_shots_and_regions(shots_df, x_col="shot_x", y_col="shot_y", ax=None):
         """
@@ -886,7 +922,7 @@ class VisUtil:
         )
 
         # Customize primary axis
-        ax1.set_ylabel("Net Rebounds (Actual - Expected)", fontsize=12)
+        ax1.set_ylabel("Net Rebounds (Actual - Expected)", fontsize=14)
         ax1.axhline(y=0, color="black", linestyle="-", linewidth=0.5)
 
         # X-axis labels
@@ -898,7 +934,7 @@ class VisUtil:
             ],
             rotation=45,
             ha="right",
-            fontsize=8,
+            fontsize=10,
         )
 
         # Secondary axis with broken lines between groups
@@ -916,7 +952,8 @@ class VisUtil:
                     line_x,
                     line_y,
                     color="blue",
-                    linewidth=2,
+                    linewidth=3,
+                    linestyle='dotted',
                     label="Rebound Rate Above Expected" if i == 1 else "",
                 )
                 line_x = [i]
@@ -924,7 +961,7 @@ class VisUtil:
             prev_group = row["position_group"]
 
         if line_x:
-            ax2.plot(line_x, line_y, color="blue", linewidth=2)
+            ax2.plot(line_x, line_y, color="blue", linewidth=3, linestyle='dotted',)
 
         # Center the secondary y-axis around zero
         max_abs_y2 = max(
@@ -935,13 +972,15 @@ class VisUtil:
 
         # Format y-axis ticks as percentages
         ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
-        ax2.set_ylabel('Rebound Rate Above Expected', color='blue', fontsize=12)
+        ax2.set_ylabel('Rebound Rate Above Expected', color='blue', fontsize=14)
         ax2.tick_params(axis='y', labelcolor='blue')
         
         # For the primary y-axis (net rebounds)
+        ax1.set_yticklabels([tick for tick in ax1.get_yticks()], fontsize=12)  # change font size
         ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'+{y:.1f}' if y > 0 else f'{y:.1f}'))
 
         # For the secondary y-axis (rebound rate)
+        ax2.set_yticklabels([tick for tick in ax2.get_yticks()], fontsize=12)  # change font size
         ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'+{y:.1%}' if y > 0 else f'{y:.1%}'))
 
         # Legends and title
@@ -951,7 +990,7 @@ class VisUtil:
 
         plt.title(
             f"Net Expected Rebounds & Rebound Rate Above Expected by Position\n(min {min_opportunities}+ Opportunities)",
-            fontsize=16,
+            fontsize=20,
             pad=20,
         )
         plt.tight_layout()
