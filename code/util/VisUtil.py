@@ -972,7 +972,7 @@ class VisUtil:
         x = range(len(df_filtered))
 
         # Create custom colormap for expected rebounds (single color gradient, e.g., shades of green)
-        colors = ['#E0F7FA', '#00695C']  # Light teal to dark teal
+        colors = ['#B2EBF2', '#004D40']  # Light teal to dark teal
         n_bins = 100
         cmap = LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
 
@@ -985,11 +985,12 @@ class VisUtil:
 
         # Set the y-axis label for expected rebounds (actual values, not percentages)
         ax1.set_ylabel('Expected Rebounds', fontsize=16)
+        ax1.set_yticklabels([tick for tick in ax1.get_yticks()], fontsize=12)  # Convert ticks to percentages
         ax1.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
 
         # Customize x-axis with angled labels
-        plt.xticks(x, [f"{row['first_name']} {row['last_name']}" for _, row in df_filtered.iterrows()],
-                rotation=45, ha='right', fontsize=8)
+        plt.xticks(x, [f"{row['first_name'][0]}. {row['last_name']}" for _, row in df_filtered.iterrows()],
+                rotation=45, ha='right', fontsize=12)
 
         # Create secondary axis for the rebound rate line (in percentage)
         ax2 = ax1.twinx()
@@ -997,7 +998,7 @@ class VisUtil:
                 color='purple', linestyle='dotted', linewidth=5, label='RROE')  # Change line to gray and dotted
         ax2.set_ylabel('Rebound Rate Over Expected (%)', color='purple', fontsize=16)
         ax2.tick_params(axis='y', labelcolor='purple')
-        ax2.set_yticklabels([f'{int(tick)}%' for tick in ax2.get_yticks()])  # Convert ticks to percentages
+        ax2.set_yticklabels([f'{int(tick)}%' for tick in ax2.get_yticks()], fontsize=12)  # Convert ticks to percentages
 
         # Combine legends and increase font size of legend
         lines1, labels1 = ax1.get_legend_handles_labels()
