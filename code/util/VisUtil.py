@@ -643,15 +643,25 @@ class VisUtil:
                 boundary_points.append([x, y, 0])
 
         # Add background mean value points with higher density
+        BASKET_X = 41.75  # X coordinate of basket
+        BASKET_Y = 0     # Y coordinate of basket
+        THREE_PT_DIST = 23.75  # Distance of 3pt line from basket
+        
         for x in np.linspace(0, 47, 30):
             for y in np.linspace(-24.9, 24.9, 30):
-                # Use different base values for different regions
-                if x > 39:  # Near basket
+                # Calculate distance from basket for this point
+                dist_from_basket = np.sqrt((x - BASKET_X)**2 + (y - BASKET_Y)**2)
+                
+                # Assign base value based on distance from basket
+                if dist_from_basket < 8:  # Close to basket
                     base_value = mean_value * 0.9
-                elif x < 23.25:  # 3pt line and beyond
-                    base_value = mean_value * 0.7
-                else:  # Mid-range
+                elif dist_from_basket > (THREE_PT_DIST + 5):  # Beyond deep three
+                    base_value = mean_value * 0.1
+                elif dist_from_basket > THREE_PT_DIST:  # Beyond 3pt line
                     base_value = mean_value * 0.8
+                else:  # Mid-range
+                    base_value = mean_value * 0.5
+                
                 boundary_points.append([x, y, base_value])
 
         boundary_df = pd.DataFrame(boundary_points, columns=[x_col, y_col, weight_col])
@@ -679,7 +689,7 @@ class VisUtil:
         from scipy.ndimage import gaussian_filter
         zi = gaussian_filter(zi, sigma=0.8)
 
-        max_val = 2.0
+        max_val = 2
         levels = np.linspace(0, max_val, 20)
 
         # Plot filled contours
