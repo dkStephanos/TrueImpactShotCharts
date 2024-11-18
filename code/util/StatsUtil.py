@@ -165,7 +165,7 @@ class StatsUtil:
         return true_points_df.apply(StatsUtil.calculate_oreb_expected_points, args=(oreb_ppp, reb_chances_df), axis=1)
                 
     def calculate_oreb_expected_points(row, oreb_ppp, reb_chances_df):
-        if row['made']:
+        if row['made'] or row['fouled']:
             row['expected_oreb_points'] = 0
             row['true_impact_points_produced'] = row['true_points_produced']
             return row
