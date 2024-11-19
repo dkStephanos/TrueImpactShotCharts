@@ -618,6 +618,7 @@ class VisUtil:
         valid_shots = shots_df[shots_df['shot_classification'] != 'beyond_halfcourt'].copy()
         valid_shots = valid_shots.dropna(subset=[x_col, y_col, weight_col])
         mean_value = valid_shots[weight_col].mean()
+        std_value = valid_shots[weight_col].std()
         
         print(f"Statistics for {weight_col}:")
         print(valid_shots[weight_col].describe())
@@ -689,7 +690,7 @@ class VisUtil:
         from scipy.ndimage import gaussian_filter
         zi = gaussian_filter(zi, sigma=0.8)
 
-        max_val = 2
+        max_val = mean_value + std_value
         levels = np.linspace(0, max_val, 20)
 
         # Plot filled contours
